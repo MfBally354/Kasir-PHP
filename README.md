@@ -1,3 +1,5 @@
+```
+
 kasir-app/
 ├── config/
 │   ├── database.php
@@ -63,3 +65,5 @@ kasir-app/
 │   └── kasir_db.sql
 ├── index.php
 └── README.md
+
+```
