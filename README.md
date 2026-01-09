@@ -325,4 +325,4 @@ Jika ada pertanyaan atau issue:
 2. Cek troubleshooting section
 3. Review kode di file terkait
 
-**Selamat menggunakan Sistem Kasir! 🎉**
+**Selamat menggunakan Sistem Kasir!!! 🎉**
