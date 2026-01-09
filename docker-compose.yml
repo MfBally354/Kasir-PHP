@@ -21,7 +21,8 @@ services:
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - kasir_network
     restart: unless-stopped
@@ -33,17 +34,22 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: #semarangwhj354iqbal#
       MYSQL_DATABASE: kasir_db
-      MYSQL_USER: kasir_user
-      MYSQL_PASSWORD: kasir_pass
+      MYSQL_USER: iqbal
+      MYSQL_PASSWORD: #semarangwhj354iqbal#
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/kasir_db.sql:/docker-entrypoint-initdb.d/kasir_db.sql
+      - ./database/kasir_db.sql:/docker-entrypoint-initdb.d/01-init.sql
     networks:
       - kasir_network
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ===== phpMyAdmin (Optional) =====
   phpmyadmin:
@@ -55,8 +61,7 @@ services:
       PMA_HOST: db
       PMA_PORT: 3306
       PMA_USER: root
-      PMA_PASSWORD: root123
-      MYSQL_ROOT_PASSWORD: root123
+      PMA_PASSWORD: root
     depends_on:
       - db
     networks:
