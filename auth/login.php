@@ -44,13 +44,15 @@ include '../includes/header.php';
                                 <ul class="nav nav-pills nav-fill mb-4" id="loginTab" role="tablist">
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link active" id="kasir-tab" data-bs-toggle="pill" 
-                                                data-bs-target="#kasir" type="button" role="tab">
+                                                data-bs-target="#kasir" type="button" role="tab" 
+                                                aria-controls="kasir" aria-selected="true">
                                             <i class="bi bi-person-badge me-1"></i> Kasir
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link" id="client-tab" data-bs-toggle="pill" 
-                                                data-bs-target="#client" type="button" role="tab">
+                                                data-bs-target="#client" type="button" role="tab"
+                                                aria-controls="client" aria-selected="false">
                                             <i class="bi bi-person me-1"></i> Pembeli
                                         </button>
                                     </li>
