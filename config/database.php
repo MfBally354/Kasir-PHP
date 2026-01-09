@@ -7,7 +7,7 @@
 // Database credentials untuk Docker
 define('DB_HOST', 'db');  // Nama service di docker-compose.yml
 define('DB_USER', 'iqbal');
-define('DB_PASS', '#semararngwhj354iqbal#');
+define('DB_PASS', '');
 define('DB_NAME', 'kasir_db');
 define('DB_CHARSET', 'utf8mb4');
 
