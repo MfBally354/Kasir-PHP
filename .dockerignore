@@ -1,0 +1,54 @@
+# ===================================
+# .dockerignore
+# Files to exclude from Docker build
+# ===================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+DOCKER_README.md
+*.md
+
+# IDE
+.vscode
+.idea
+*.sublime-*
+.DS_Store
+
+# Node
+node_modules
+npm-debug.log
+
+# Composer
+vendor/
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+tmp/
+temp/
+
+# Tests
+tests/
+phpunit.xml
+
+# Docker files (tidak perlu di-copy ke image)
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Backup
+*.backup
+*.sql.backup
+backup/
+
+# OS
+Thumbs.db
+.DS_Store
