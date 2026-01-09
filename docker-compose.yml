@@ -39,7 +39,7 @@ services:
       MYSQL_ROOT_PASSWORD: "#semarangwhj354iqbal#"
       MYSQL_DATABASE: kasir_db
       MYSQL_USER: iqbal
-      MYSQL_PASSWORD: "#semarangwhj354#iqbal"
+      MYSQL_PASSWORD: "#semarangwhj354iqbal#"
       MYSQL_ROOT_HOST: "%"
     volumes:
       - mysql_data:/var/lib/mysql
