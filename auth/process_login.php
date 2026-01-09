@@ -1,6 +1,7 @@
 <?php
 // auth/process_login.php
 // Proses login untuk Kasir dan Client
+// ADMIN BISA LOGIN DIMANA SAJA!
 
 require_once '../config/config.php';
 
@@ -30,12 +31,25 @@ $result = $auth->login($username, $password);
 if ($result['success']) {
     $userRole = $result['role'];
     
-    // Validasi role sesuai dengan tab yang dipilih
+    // ====================================
+    // PENTING: Admin bisa login dimana saja!
+    // ====================================
+    if ($userRole == 'admin') {
+        // Admin langsung redirect ke dashboard admin
+        setFlashMessage('Login berhasil! Selamat datang Admin ' . $_SESSION['full_name'], 'success');
+        redirect('/admin/dashboard.php');
+        exit;
+    }
+    
+    // ====================================
+    // Validasi role untuk NON-ADMIN
+    // ====================================
     if ($roleType == 'kasir' && $userRole != 'kasir') {
         // User bukan kasir tapi login di tab kasir
         $auth->logout();
         setFlashMessage('Akses ditolak! Anda bukan kasir. Silakan login sebagai pembeli.', 'danger');
         redirect('/auth/login.php');
+        exit;
     }
     
     if ($roleType == 'client' && $userRole != 'client') {
@@ -43,6 +57,7 @@ if ($result['success']) {
         $auth->logout();
         setFlashMessage('Akses ditolak! Akun ini adalah kasir. Silakan login di tab Kasir.', 'danger');
         redirect('/auth/login.php');
+        exit;
     }
     
     // Login berhasil dan role sesuai
@@ -50,9 +65,6 @@ if ($result['success']) {
     
     // Redirect sesuai role
     switch ($userRole) {
-        case 'admin':
-            redirect('/admin/dashboard.php');
-            break;
         case 'kasir':
             redirect('/kasir/dashboard.php');
             break;
