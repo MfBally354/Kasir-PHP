@@ -79,10 +79,10 @@ function getConnection() {
 }
 
 // Test connection (uncomment untuk debugging)
- try {
-     $conn = getConnection();
-     echo "✅ Database OK!";
- } catch (Exception $e) {
-     echo "❌ Error: " . $e->getMessage();
- }
+// try {
+//     $conn = getConnection();
+//     echo "✅ Database OK!";
+// } catch (Exception $e) {
+//     echo "❌ Error: " . $e->getMessage();
+// }
 ?>
