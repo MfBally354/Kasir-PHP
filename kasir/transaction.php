@@ -1,10 +1,10 @@
 <?php
-// kasir/transaction.php
+// kasir/transaction.php - FIXED VERSION
 require_once '../config/config.php';
 requireRole('kasir');
 
 $pageTitle = 'Transaksi Baru';
-$includeCalculator = true; // Include calculator.js
+$includeCalculator = true;
 
 $productClass = new Product();
 $products = $productClass->getAllProducts('available');
@@ -143,7 +143,8 @@ include '../includes/header.php';
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Nama Customer (Opsional)</label>
-                                <input type="text" class="form-control" name="customer_name" placeholder="Nama customer">
+                                <input type="text" class="form-control" name="customer_name" 
+                                       id="customerNameInput" placeholder="Nama customer">
                             </div>
                         </div>
                         
@@ -254,15 +255,15 @@ function renderCart() {
                 <td>${item.name}</td>
                 <td class="text-center">
                     <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
-                        <button class="btn btn-outline-secondary qty-minus" data-index="${index}">-</button>
+                        <button class="btn btn-outline-secondary qty-minus" data-index="${index}" type="button">-</button>
                         <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
-                        <button class="btn btn-outline-secondary qty-plus" data-index="${index}">+</button>
+                        <button class="btn btn-outline-secondary qty-plus" data-index="${index}" type="button">+</button>
                     </div>
                 </td>
                 <td class="text-end">${formatRupiah(item.price)}</td>
                 <td class="text-end subtotal">${formatRupiah(subtotal)}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger remove-item" data-index="${index}">
+                    <button class="btn btn-sm btn-danger remove-item" data-index="${index}" type="button">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -271,8 +272,6 @@ function renderCart() {
     });
     
     calculateTotal();
-    
-    // Re-bind events
     bindCartEvents();
 }
 
@@ -291,6 +290,8 @@ function bindCartEvents() {
         if (cart[index].quantity < cart[index].stock) {
             cart[index].quantity++;
             renderCart();
+        } else {
+            alert('Stok maksimal: ' + cart[index].stock);
         }
     });
     
@@ -370,6 +371,61 @@ $('#categoryFilter').on('change', function() {
         $('.product-item').show();
     }
 });
+
+// FIX: Prevent backspace from triggering calculator when typing in input fields
+$(document).on('keydown', '#customerNameInput', function(e) {
+    // Stop event propagation to prevent calculator from catching it
+    e.stopPropagation();
+});
+
+// FIX: Disable keyboard calculator when focus on input
+$('#customerNameInput').on('focus', function() {
+    $(document).off('keydown.calculator');
+});
+
+$('#customerNameInput').on('blur', function() {
+    // Re-enable keyboard calculator after blur
+    setTimeout(function() {
+        enableKeyboardCalculator();
+    }, 100);
+});
+
+// Enable keyboard calculator
+function enableKeyboardCalculator() {
+    $(document).on('keydown.calculator', function(e) {
+        // Only if not focused on input
+        if ($(e.target).is('input, textarea')) {
+            return;
+        }
+        
+        if (!calculator) return;
+        
+        if (e.key >= '0' && e.key <= '9') {
+            calculator.appendNumber(e.key);
+        }
+        
+        if (e.key === 'Enter' || e.key === '=') {
+            e.preventDefault();
+            calculator.calculate();
+        }
+        
+        if (e.key === 'Backspace') {
+            e.preventDefault();
+            calculator.delete();
+        }
+        
+        if (e.key === 'Escape') {
+            calculator.clear();
+        }
+        
+        if (e.key === '.' || e.key === ',') {
+            calculator.appendNumber('.');
+        }
+    });
+}
+
+// Initialize keyboard calculator
+enableKeyboardCalculator();
 </script>
 
 <?php include '../includes/footer.php'; ?>
