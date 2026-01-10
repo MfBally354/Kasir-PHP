@@ -1,10 +1,14 @@
 # ===================================
-# docker-compose.yml untuk ARM (Raspberry Pi)
-# Port: 8090
+# docker-compose.yml
+# Sistem Kasir PHP untuk Raspberry Pi 3
+# ARM32v7 Compatible
+# Port: 8090 (Web), 3307 (MySQL)
 # ===================================
 
+version: '3.8'
+
 services:
-  # ===== PHP Apache Web Server =====
+  # ===== PHP Apache Web Server (ARM32v7) =====
   web:
     build:
       context: .
@@ -17,35 +21,57 @@ services:
       - ./uploads:/var/www/html/uploads
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html
-      - DB_HOST=db
-      - DB_NAME=kasir_db
-      - DB_USER=iqbal
-      - DB_PASS="#semarangwhj354iqbal#"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - kasir_network
+    restart: unless-stopped
+
+  # ===== MariaDB untuk ARM32v7 =====
+  db:
+    image: linuxserver/mariadb:arm32v7-latest
+    container_name: kasir_db
+    ports:
+      - "3307:3306"
+    environment:
+      PUID: 1000
+      PGID: 1000
+      MYSQL_ROOT_PASSWORD: "rootpassword123"
+      MYSQL_DATABASE: kasir_db
+      MYSQL_USER: iqbal
+      MYSQL_PASSWORD: "#semarangwhj354iqbal#"
+      TZ: Asia/Jakarta
+    volumes:
+      - mysql_data:/config
+      - ./database/kasir_db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - kasir_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uiqbal", "-p#semarangwhj354iqbal#"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ===== phpMyAdmin ARM32v7 =====
+  phpmyadmin:
+    image: arm32v7/phpmyadmin:latest
+    container_name: kasir_phpmyadmin
+    ports:
+      - "8091:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: iqbal
+      PMA_PASSWORD: "#semarangwhj354iqbal#"
+      UPLOAD_LIMIT: 20M
     depends_on:
       - db
     networks:
       - kasir_network
     restart: unless-stopped
-
-  # ===== MySQL/MariaDB untuk ARM =====
-  db:
-    image: jsurf/rpi-mariadb:latest
-    container_name: kasir_db
-    ports:
-      - "3307:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: "#semarangwhj354iqbal#"
-      MYSQL_DATABASE: kasir_db
-      MYSQL_USER: iqbal
-      MYSQL_PASSWORD: "#semarangwhj354iqbal#"
-      MYSQL_ROOT_HOST: "%"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./database/kasir_db.sql:/docker-entrypoint-initdb.d/01-init.sql
-    networks:
-      - kasir_network
-    restart: unless-stopped
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
 # ===== Networks =====
 networks:
@@ -56,4 +82,3 @@ networks:
 volumes:
   mysql_data:
     driver: local
-
