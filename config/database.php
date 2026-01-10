@@ -1,11 +1,12 @@
 <?php
 // ===================================
 // config/database.php
-// Database Configuration untuk PHP Native (Non-Docker)
+// Database Configuration untuk Server SSH
 // ===================================
 
-// Database credentials untuk XAMPP/localhost
-define('DB_HOST', '192.168.1.16');                  // Ganti dari 'db' ke 'localhost'
+// PENTING: PHP dan MySQL ada di server yang sama
+// Jadi tetap pakai localhost/127.0.0.1, BUKAN IP server!
+define('DB_HOST', '127.0.0.1');                  // Atau 'localhost'
 define('DB_USER', 'iqbal');                      // User MySQL Anda
 define('DB_PASS', '#semarangwhj354iqbal#');      // Password Anda
 define('DB_NAME', 'kasir_db');                   // Nama database
@@ -29,22 +30,19 @@ function getConnection() {
     } catch (PDOException $e) {
         // Log error untuk debugging
         error_log("Database Connection Error: " . $e->getMessage());
-        error_log("Trying to connect with:");
         error_log("Host: " . DB_HOST);
         error_log("User: " . DB_USER);
         error_log("Database: " . DB_NAME);
         
-        // Tampilkan error detail saat development (HAPUS di production!)
         die("❌ Koneksi database gagal!<br>" . 
             "Error: " . $e->getMessage() . "<br>" .
             "Host: " . DB_HOST . "<br>" .
             "User: " . DB_USER . "<br>" .
             "Database: " . DB_NAME . "<br><br>" .
-            "<strong>Solusi:</strong><br>" .
-            "1. Pastikan MySQL sudah berjalan (cek dengan: <code>sudo systemctl status mysql</code>)<br>" .
-            "2. Pastikan user 'iqbal' memiliki akses ke database 'kasir_db'<br>" .
-            "3. Pastikan password benar: '#semarangwhj354iqbal#'<br>" .
-            "4. Import database: <code>mysql -u iqbal -p kasir_db < database/kasir_db.sql</code>");
+            "<strong>Debug Info:</strong><br>" .
+            "• MySQL Status: <code>sudo systemctl status mysql</code><br>" .
+            "• Test MySQL: <code>mysql -u iqbal -p -h 127.0.0.1</code><br>" .
+            "• Import DB: <code>mysql -u iqbal -p kasir_db < database/kasir_db.sql</code>");
     }
 }
 ?>
