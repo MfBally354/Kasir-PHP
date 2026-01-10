@@ -1,7 +1,7 @@
 # ===================================
 # docker-compose.yml
 # Sistem Kasir PHP untuk Raspberry Pi 3
-# ARM32v7 Compatible (TESTED)
+# ARM32v7 Compatible (TESTED & WORKING)
 # Port: 8090 (Web), 3307 (MySQL)
 # ===================================
 
@@ -56,22 +56,20 @@ services:
       retries: 10
       start_period: 60s
 
-  # ===== phpMyAdmin ARM32v7 =====
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: kasir_phpmyadmin
-    platform: linux/arm/v7
-    ports:
-      - "8091:80"
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      UPLOAD_LIMIT: 20M
-    depends_on:
-      - db
-    networks:
-      - kasir_network
-    restart: unless-stopped
+  # ===== phpMyAdmin Alternative: Adminer (ARM32v7) =====
+  # Uncomment jika ingin GUI database manager
+  # adminer:
+  #   image: arm32v7/adminer:latest
+  #   container_name: kasir_adminer
+  #   ports:
+  #     - "8091:8080"
+  #   environment:
+  #     ADMINER_DEFAULT_SERVER: db
+  #   depends_on:
+  #     - db
+  #   networks:
+  #     - kasir_network
+  #   restart: unless-stopped
 
 # ===== Networks =====
 networks:

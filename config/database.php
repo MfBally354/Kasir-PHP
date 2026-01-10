@@ -1,20 +1,29 @@
 <?php
 // ===================================
 // config/database.php
-// Database Configuration untuk Docker
+// Auto-detect Docker atau Native PHP
 // ===================================
 
-// Database credentials - Sesuai docker-compose.yml
-define('DB_HOST', 'db');                         // Nama service di docker-compose
-define('DB_USER', 'iqbal');                      // User MySQL
-define('DB_PASS', '#semarangwhj354iqbal#');      // Password
-define('DB_NAME', 'kasir_db');                   // Nama database
+// Deteksi apakah running di Docker atau native
+$isDocker = getenv('APACHE_DOCUMENT_ROOT') !== false || file_exists('/.dockerenv');
+
+// Set database host berdasarkan environment
+if ($isDocker) {
+    // Running di Docker - gunakan nama service
+    define('DB_HOST', 'db');
+} else {
+    // Running di PHP native - gunakan localhost
+    define('DB_HOST', '127.0.0.1');
+}
+
+define('DB_USER', 'iqbal');
+define('DB_PASS', '#semarangwhj354iqbal#');
+define('DB_NAME', 'kasir_db');
 define('DB_CHARSET', 'utf8mb4');
 
-// Function untuk mendapatkan koneksi database
 function getConnection() {
     $maxRetries = 5;
-    $retryDelay = 2; // seconds
+    $retryDelay = 2;
     
     for ($i = 0; $i < $maxRetries; $i++) {
         try {
@@ -30,59 +39,48 @@ function getConnection() {
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
             
             // Log successful connection
-            error_log("Database connected successfully");
+            error_log("Database connected successfully to: " . DB_HOST);
             
             return $pdo;
             
         } catch (PDOException $e) {
-            // Log error untuk debugging
             error_log("Database Connection Attempt " . ($i + 1) . " failed: " . $e->getMessage());
             
-            // Jika ini bukan percobaan terakhir, tunggu sebentar
             if ($i < $maxRetries - 1) {
                 error_log("Retrying in $retryDelay seconds...");
                 sleep($retryDelay);
                 continue;
             }
             
-            // Percobaan terakhir gagal, tampilkan error
-            $errorPage = "
+            // Error page
+            die("
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Database Connection Error</title>
+                <title>Database Error</title>
                 <style>
-                    body { 
-                        font-family: Arial, sans-serif; 
-                        padding: 40px; 
-                        background: #f5f5f5; 
-                    }
+                    body { font-family: Arial; padding: 40px; background: #f5f5f5; }
                     .error-box { 
                         background: white; 
                         padding: 30px; 
                         border-radius: 10px; 
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
                         max-width: 800px;
                         margin: 0 auto;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
                     }
                     h1 { color: #dc3545; }
-                    .info { 
-                        background: #f8f9fa; 
-                        padding: 15px; 
-                        border-radius: 5px; 
-                        margin: 20px 0;
-                    }
                     code { 
-                        background: #e9ecef; 
+                        background: #f8f9fa; 
                         padding: 2px 6px; 
-                        border-radius: 3px; 
+                        border-radius: 3px;
                         font-family: monospace;
                     }
-                    .checklist { 
-                        background: #fff3cd; 
+                    .info { 
+                        background: #e7f3ff; 
                         padding: 15px; 
                         border-radius: 5px; 
-                        border-left: 4px solid #ffc107;
+                        margin: 15px 0;
+                        border-left: 4px solid #0066cc;
                     }
                 </style>
             </head>
@@ -91,55 +89,24 @@ function getConnection() {
                     <h1>❌ Database Connection Failed</h1>
                     
                     <div class='info'>
-                        <p><strong>Error Message:</strong></p>
-                        <code>" . htmlspecialchars($e->getMessage()) . "</code>
+                        <p><strong>Environment:</strong> " . ($GLOBALS['isDocker'] ? 'Docker' : 'PHP Native') . "</p>
+                        <p><strong>DB Host:</strong> <code>" . DB_HOST . "</code></p>
+                        <p><strong>DB Name:</strong> <code>" . DB_NAME . "</code></p>
+                        <p><strong>DB User:</strong> <code>" . DB_USER . "</code></p>
+                        <p><strong>Error:</strong> " . htmlspecialchars($e->getMessage()) . "</p>
                     </div>
                     
-                    <div class='info'>
-                        <p><strong>Connection Details:</strong></p>
-                        <ul>
-                            <li>Host: <code>" . DB_HOST . "</code></li>
-                            <li>Database: <code>" . DB_NAME . "</code></li>
-                            <li>User: <code>" . DB_USER . "</code></li>
-                        </ul>
-                    </div>
-                    
-                    <div class='checklist'>
-                        <p><strong>🔍 Troubleshooting Checklist:</strong></p>
-                        <ol>
-                            <li>Pastikan semua container berjalan:
-                                <br><code>docker compose ps</code>
-                            </li>
-                            <li>Cek logs database:
-                                <br><code>docker compose logs db</code>
-                            </li>
-                            <li>Tunggu hingga database ready (~60 detik pertama kali):
-                                <br><code>docker compose logs -f db | grep 'ready for connections'</code>
-                            </li>
-                            <li>Restart containers jika perlu:
-                                <br><code>docker compose restart</code>
-                            </li>
-                            <li>Rebuild dari awal:
-                                <br><code>docker compose down -v</code>
-                                <br><code>docker compose up -d --build</code>
-                            </li>
-                        </ol>
-                    </div>
-                    
-                    <div class='info'>
-                        <p><strong>💡 Tips:</strong></p>
-                        <ul>
-                            <li>Database MariaDB membutuhkan waktu 30-60 detik untuk initialize pertama kali</li>
-                            <li>Jika masih error setelah 2 menit, coba restart: <code>docker compose restart db</code></li>
-                            <li>Cek koneksi manual: <code>docker exec -it kasir_db mysql -uiqbal -p</code></li>
-                        </ul>
-                    </div>
+                    <h3>🔍 Troubleshooting:</h3>
+                    <ul>
+                        <li>Cek container status: <code>docker compose ps</code></li>
+                        <li>Cek database logs: <code>docker compose logs db</code></li>
+                        <li>Test koneksi: <code>docker exec -it kasir_db mysql -uiqbal -p</code></li>
+                        <li>Restart: <code>docker compose restart</code></li>
+                    </ul>
                 </div>
             </body>
             </html>
-            ";
-            
-            die($errorPage);
+            ");
         }
     }
 }
