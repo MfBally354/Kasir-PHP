@@ -5,7 +5,7 @@
 // ===================================
 
 // Database credentials untuk XAMPP/localhost
-define('DB_HOST', 'localhost');                  // Ganti dari 'db' ke 'localhost'
+define('DB_HOST', '127.0.0.1');                  // Ganti dari 'db' ke 'localhost'
 define('DB_USER', 'iqbal');                      // User MySQL Anda
 define('DB_PASS', '#semarangwhj354iqbal#');      // Password Anda
 define('DB_NAME', 'kasir_db');                   // Nama database
