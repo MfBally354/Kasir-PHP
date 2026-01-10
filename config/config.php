@@ -10,7 +10,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // Definisi konstanta aplikasi
 define('APP_NAME', 'Sistem Kasir');
 define('APP_VERSION', '1.0.0');
-define('BASE_URL', 'http://localhost/kasir-app'); // Sesuaikan dengan URL kamu
+define('BASE_URL', 'http://192.168.1.16:8090'); // Sesuaikan dengan URL kamu
 
 // Path direktori
 define('ROOT_PATH', dirname(__DIR__));
