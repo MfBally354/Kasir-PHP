@@ -1,346 +1,481 @@
-# 🐳 Docker Setup - Sistem Kasir PHP
+# 🐳 Docker Setup - Sistem Kasir PHP untuk Raspberry Pi 3
 
-Panduan lengkap untuk menjalankan Sistem Kasir menggunakan Docker.
+Panduan lengkap menjalankan Sistem Kasir di **Raspberry Pi 3 (ARM32v7)** menggunakan Docker.
+
+---
+
+## 🎯 Spesifikasi
+
+- **Platform:** Raspberry Pi 3 (ARM 32-bit)
+- **OS:** Raspbian/Raspberry Pi OS
+- **PHP:** 8.1 with Apache
+- **Database:** MariaDB (ARM32v7)
+- **Port Web:** 8090
+- **Port MySQL:** 3307
+- **Port phpMyAdmin:** 8091
 
 ---
 
 ## 📋 Prerequisites
 
-Pastikan sudah terinstall:
-- **Docker** (versi 20.10+)
-- **Docker Compose** (versi 1.29+)
+### 1. Install Docker
 
-Cek versi:
 ```bash
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Tambahkan user ke docker group
+sudo usermod -aG docker $USER
+
+# Logout dan login kembali, atau:
+newgrp docker
+
+# Verifikasi
 docker --version
-docker-compose --version
+```
+
+### 2. Install Docker Compose (jika belum ada)
+
+```bash
+# Install Docker Compose Plugin
+sudo apt-get update
+sudo apt-get install docker-compose-plugin
+
+# Verifikasi
+docker compose version
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Cara Tercepat)
 
-### 1. **Clone atau Download Project**
+### Metode 1: Menggunakan Script Otomatis
+
 ```bash
-cd kasir-app
+cd /home/iqbal/database/kasir-app
+
+# Buat script executable
+chmod +x DOCKER_START.sh
+
+# Jalankan
+bash DOCKER_START.sh
 ```
 
-### 2. **Build dan Jalankan Container**
-```bash
-docker-compose up -d --build
-```
-
-Perintah ini akan:
-- Build image PHP Apache
-- Download image MySQL 8.0
-- Download image phpMyAdmin
-- Membuat dan menjalankan semua container
-- Import database otomatis
-
-### 3. **Akses Aplikasi**
-
-Tunggu sekitar 30-60 detik untuk MySQL selesai initialize, kemudian akses:
-
-| Service | URL | Keterangan |
-|---------|-----|------------|
-| **Web Aplikasi** | http://localhost:8090 | Port utama aplikasi |
-| **phpMyAdmin** | http://localhost:8091 | Manajemen database |
+Script akan otomatis:
+- ✅ Cek semua dependencies
+- ✅ Build Docker images
+- ✅ Start containers
+- ✅ Wait database ready
+- ✅ Show status dan URLs
 
 ---
 
-## 🔐 Credentials
+### Metode 2: Manual Commands
 
-### Database MySQL
-```
-Host: db (dari container) / localhost:3307 (dari host)
-Database: kasir_db
-Username: kasir_user
-Password: kasir_pass
-Root Password: root123
+```bash
+cd /home/iqbal/database/kasir-app
+
+# Build dan start containers
+docker compose up -d --build
+
+# Tunggu database ready (~60 detik)
+docker compose logs -f db
+
+# Tekan Ctrl+C saat muncul "ready for connections"
+
+# Cek status
+docker compose ps
 ```
 
-### phpMyAdmin
-```
-URL: http://localhost:8091
-Username: root
-Password: root123
-```
+Akses aplikasi:
+- **Web:** http://192.168.1.16:8090
+- **phpMyAdmin:** http://192.168.1.16:8091
 
-### Aplikasi Login
+---
+
+## 🔐 Login Credentials
+
+### Aplikasi Web
 
 **Admin:**
 ```
-URL: http://localhost:8090/admin/dashboard.php
+URL: http://192.168.1.16:8090/admin/dashboard.php
 Username: admin
 Password: admin123
 ```
 
 **Kasir:**
 ```
-URL: http://localhost:8090/auth/login.php
+URL: http://192.168.1.16:8090/auth/login.php
+Tab: Kasir
 Username: kasir1
 Password: kasir123
 ```
 
-**Client:**
+**Client/Pembeli:**
 ```
-URL: http://localhost:8090/auth/login.php → Tab Pembeli
-Username: client1
-Password: client123
+URL: http://192.168.1.16:8090/auth/register.php
+(Registrasi akun baru)
+```
+
+### phpMyAdmin
+
+```
+URL: http://192.168.1.16:8090/phpmyadmin
+Username: iqbal
+Password: #semarangwhj354iqbal#
+```
+
+### MySQL (dari Host)
+
+```bash
+mysql -h 127.0.0.1 -P 3307 -u iqbal -p
+# Password: #semarangwhj354iqbal#
 ```
 
 ---
 
-## 📂 Struktur Docker
+## 📂 Struktur File
 
 ```
 kasir-app/
-├── docker-compose.yml      # Konfigurasi semua services
-├── Dockerfile              # Build PHP Apache
+├── docker-compose.yml          # Konfigurasi Docker services
+├── Dockerfile                  # Build PHP Apache ARM32v7
+├── DOCKER_START.sh            # Script auto-start
 ├── config/
-│   └── database.php        # Konfigurasi koneksi DB (sudah disesuaikan)
+│   └── database.php           # Config database (gunakan 'db' sebagai host)
 ├── database/
-│   └── kasir_db.sql       # Auto-import saat pertama kali
-└── uploads/                # Persistent storage
+│   └── kasir_db.sql          # Auto-import saat pertama kali
+├── uploads/                   # Persistent storage untuk gambar
+└── ... (file PHP lainnya)
 ```
 
 ---
 
 ## 🛠️ Docker Commands
 
-### Start Containers
+### Basic Commands
+
 ```bash
-docker-compose up -d
+# Start containers
+docker compose up -d
+
+# Stop containers
+docker compose down
+
+# Restart containers
+docker compose restart
+
+# Rebuild images
+docker compose up -d --build
 ```
 
-### Stop Containers
+### Monitoring
+
 ```bash
-docker-compose down
+# Lihat status containers
+docker compose ps
+
+# Lihat logs semua services
+docker compose logs -f
+
+# Lihat logs service tertentu
+docker compose logs -f web
+docker compose logs -f db
+docker compose logs -f phpmyadmin
+
+# Lihat resource usage
+docker stats
 ```
 
-### Restart Containers
-```bash
-docker-compose restart
-```
+### Debugging
 
-### View Logs
 ```bash
-# Semua logs
-docker-compose logs -f
-
-# Logs specific service
-docker-compose logs -f web
-docker-compose logs -f db
-```
-
-### Check Running Containers
-```bash
-docker-compose ps
-```
-
-### Access Container Shell
-```bash
-# Web container
+# Masuk ke container web (shell)
 docker exec -it kasir_web bash
 
-# Database container
-docker exec -it kasir_db bash
+# Masuk ke MySQL
+docker exec -it kasir_db mysql -uiqbal -p
+
+# Lihat file config
+docker exec kasir_web cat /var/www/html/config/database.php
+
+# Test koneksi PHP ke MySQL
+docker exec kasir_web php -r "echo 'Testing MySQL connection...'; \$pdo = new PDO('mysql:host=db;dbname=kasir_db', 'iqbal', '#semarangwhj354iqbal#'); echo 'Success!';"
 ```
 
-### Rebuild Containers (jika ada perubahan Dockerfile)
-```bash
-docker-compose up -d --build
-```
-
-### Remove All (termasuk volumes)
-```bash
-docker-compose down -v
-```
-
----
-
-## 🔄 Import Ulang Database
-
-Jika perlu import ulang database:
+### Maintenance
 
 ```bash
-# Method 1: Via Docker Exec
-docker exec -i kasir_db mysql -uroot -proot123 kasir_db < database/kasir_db.sql
+# Stop dan hapus semua (HATI-HATI!)
+docker compose down -v
 
-# Method 2: Via phpMyAdmin
-# Akses http://localhost:8091
-# Login → Import → Pilih kasir_db.sql
+# Fresh install
+docker compose down -v
+docker compose up -d --build
+
+# Backup database
+docker exec kasir_db mysqldump -uiqbal -p'#semarangwhj354iqbal#' kasir_db > backup_$(date +%Y%m%d).sql
+
+# Restore database
+docker exec -i kasir_db mysql -uiqbal -p'#semarangwhj354iqbal#' kasir_db < backup_20250110.sql
+
+# Clean unused images (hemat space)
+docker system prune -a
 ```
-
----
-
-## 📁 Persistent Data
-
-### Volumes yang Dibuat:
-- **mysql_data**: Data MySQL (persistent)
-- **./uploads**: File upload produk (persistent)
-
-Data ini akan tetap ada meskipun container dihapus (kecuali pakai `docker-compose down -v`).
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Port Sudah Digunakan
-Jika port 8090 atau 3307 sudah digunakan, edit `docker-compose.yml`:
+### ❌ Error: "database connection failed"
 
-```yaml
-services:
-  web:
-    ports:
-      - "8080:80"  # Ganti 8090 ke 8080
-  
-  db:
-    ports:
-      - "3308:3306"  # Ganti 3307 ke 3308
-```
+**Penyebab:** Database belum siap
 
-### Database Connection Error
+**Solusi:**
 ```bash
-# Cek apakah MySQL sudah ready
-docker-compose logs db
+# Cek logs database
+docker compose logs db
 
-# Tunggu sampai muncul: "ready for connections"
+# Tunggu hingga muncul "ready for connections"
 # Biasanya butuh 30-60 detik pertama kali
-```
 
-### Permission Error pada Uploads
-```bash
-# Dari host
-chmod -R 777 uploads/
+# Restart database
+docker compose restart db
 
-# Atau dari container
-docker exec -it kasir_web chmod -R 777 /var/www/html/uploads
-```
-
-### Container Tidak Start
-```bash
-# Cek logs error
-docker-compose logs
-
-# Rebuild dari awal
-docker-compose down
-docker-compose up -d --build
-```
-
-### Reset Semua (Fresh Install)
-```bash
-# HATI-HATI: Ini akan menghapus semua data!
-docker-compose down -v
-docker-compose up -d --build
+# Tunggu 1 menit, lalu cek lagi
 ```
 
 ---
 
-## 🔧 Konfigurasi Lanjutan
+### ❌ Error: "port already in use"
 
-### Ubah PHP Settings
-Edit `Dockerfile`, tambahkan di section PHP config:
-```dockerfile
-RUN echo "upload_max_filesize = 20M" > /usr/local/etc/php/conf.d/uploads.ini
-```
+**Penyebab:** Port 8090 atau 3307 sudah digunakan
 
-Rebuild:
+**Solusi:**
 ```bash
-docker-compose up -d --build
-```
+# Cek port yang digunakan
+sudo netstat -tlnp | grep 8090
+sudo netstat -tlnp | grep 3307
 
-### Backup Database
-```bash
-# Backup
-docker exec kasir_db mysqldump -uroot -proot123 kasir_db > backup_$(date +%Y%m%d).sql
+# Stop service yang conflict, atau
+# Edit port di docker-compose.yml:
+nano docker-compose.yml
 
-# Restore
-docker exec -i kasir_db mysql -uroot -proot123 kasir_db < backup_20250109.sql
-```
-
-### Update BASE_URL di config.php
-Edit `config/config.php`:
-```php
-define('BASE_URL', 'http://localhost:8090');
+# Ganti:
+#   ports:
+#     - "8091:80"   # Ganti 8090 ke 8091
 ```
 
 ---
 
-## 📊 Monitoring
+### ❌ Error: "no space left on device"
 
-### Resource Usage
+**Penyebab:** Raspberry Pi storage penuh
+
+**Solusi:**
 ```bash
-docker stats
-```
+# Cek disk usage
+df -h
 
-### Check Health
-```bash
-# Test web server
-curl http://localhost:8090
+# Hapus Docker images yang tidak terpakai
+docker system prune -a
 
-# Test MySQL
-docker exec kasir_db mysql -uroot -proot123 -e "SELECT 'OK' as status;"
+# Hapus logs lama
+sudo journalctl --vacuum-time=7d
 ```
 
 ---
 
-## 🚀 Production Deployment
+### ❌ Container "kasir_web" exit dengan error
 
-Untuk production, edit `docker-compose.yml`:
+**Solusi:**
+```bash
+# Lihat logs detail
+docker compose logs web
 
+# Cek syntax error PHP
+docker exec kasir_web php -l /var/www/html/index.php
+
+# Rebuild
+docker compose up -d --build web
+```
+
+---
+
+### ⚠️ Database sangat lambat di Raspberry Pi 3
+
+**Normal!** Raspberry Pi 3 memiliki CPU dan RAM terbatas.
+
+**Optimasi:**
+```bash
+# Edit docker-compose.yml, kurangi buffer pool:
+services:
+  db:
+    command: >
+      --innodb_buffer_pool_size=128M  # Dari 256M ke 128M
+```
+
+---
+
+## 📊 Performance Tips untuk Raspberry Pi 3
+
+### 1. **Kurangi Memory Usage**
+
+Edit `docker-compose.yml`:
 ```yaml
 services:
-  web:
-    environment:
-      - PHP_DISPLAY_ERRORS=Off
-      - PHP_ERROR_REPORTING=0
-  
   db:
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}  # Gunakan .env
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+    command: >
+      --innodb_buffer_pool_size=128M
+      --max_connections=50
 ```
 
-Buat file `.env`:
-```env
-DB_ROOT_PASSWORD=strong_password_here
-DB_PASSWORD=another_strong_password
+### 2. **Disable phpMyAdmin (jika tidak diperlukan)**
+
+Comment out section phpMyAdmin di `docker-compose.yml`:
+```yaml
+# phpmyadmin:
+#   image: arm32v7/phpmyadmin:latest
+#   ...
+```
+
+### 3. **Gunakan Docker BuildKit**
+
+```bash
+export DOCKER_BUILDKIT=1
+docker compose up -d --build
+```
+
+### 4. **Monitoring Resource**
+
+```bash
+# Cek memory usage
+free -h
+
+# Cek CPU usage
+top
+
+# Cek Docker stats
+docker stats --no-stream
 ```
 
 ---
 
-## 📝 Notes
+## 🔄 Update Aplikasi
 
-1. **First Time Setup**: Database auto-import dari `database/kasir_db.sql`
-2. **File Uploads**: Tersimpan di `./uploads/products/` (persistent)
-3. **Development Mode**: Error reporting enabled untuk debugging
-4. **Auto-restart**: Container akan auto-restart jika crash
+### Update Code PHP (tidak perlu rebuild)
 
----
+```bash
+# Edit file PHP
+nano client/checkout.php
 
-## 🆘 Support
+# Restart web container
+docker compose restart web
 
-Jika ada masalah:
-1. Cek logs: `docker-compose logs -f`
-2. Restart: `docker-compose restart`
-3. Rebuild: `docker-compose up -d --build`
-4. Fresh install: `docker-compose down -v && docker-compose up -d --build`
+# Selesai!
+```
 
----
+### Update Docker Configuration
 
-## ✅ Checklist Instalasi
+```bash
+# Edit docker-compose.yml atau Dockerfile
+nano docker-compose.yml
 
-- [ ] Docker dan Docker Compose terinstall
-- [ ] Clone/download project
-- [ ] Run `docker-compose up -d --build`
-- [ ] Tunggu MySQL ready (~60 detik)
-- [ ] Akses http://localhost:8090
-- [ ] Login dengan credential default
-- [ ] Upload gambar produk test (cek permission)
-- [ ] Test transaksi
-- [ ] Cek phpMyAdmin http://localhost:8091
+# Rebuild
+docker compose up -d --build
+```
 
 ---
 
-**Selamat menggunakan Sistem Kasir dengan Docker! 🎉**
+## 🌐 Akses dari Jaringan Lokal
+
+Aplikasi otomatis bisa diakses dari komputer lain di jaringan yang sama:
+
+```
+http://192.168.1.16:8090
+```
+
+Ganti `192.168.1.16` dengan IP Raspberry Pi Anda:
+```bash
+hostname -I
+```
+
+**Buka Firewall (jika perlu):**
+```bash
+sudo ufw allow 8090
+sudo ufw allow 8091
+```
+
+---
+
+## ✅ Checklist Setup
+
+- [ ] Docker terinstall (`docker --version`)
+- [ ] Docker Compose terinstall (`docker compose version`)
+- [ ] User ada di docker group (`groups`)
+- [ ] File `docker-compose.yml` ada
+- [ ] File `Dockerfile` ada
+- [ ] File `database/kasir_db.sql` ada
+- [ ] Run `docker compose up -d --build`
+- [ ] Tunggu database ready (~60 detik)
+- [ ] Akses http://192.168.1.16:8090
+- [ ] Login admin berhasil
+- [ ] Upload test image berhasil
+
+---
+
+## 📝 Notes Penting
+
+### Khusus Raspberry Pi 3:
+
+1. **Build Time:** Proses `docker compose build` akan memakan waktu **5-10 menit** pertama kali karena Raspberry Pi 3 memiliki CPU yang lambat.
+
+2. **First Start:** Database MariaDB butuh **60-90 detik** untuk initialize pertama kali.
+
+3. **Memory:** Raspberry Pi 3 hanya punya 1GB RAM. Jangan jalankan terlalu banyak container sekaligus.
+
+4. **Storage:** Pastikan ada minimal **2GB** free space untuk Docker images dan data.
+
+5. **Networking:** Pastikan Pi terhubung ke jaringan dengan baik.
+
+### Image ARM32v7 yang Digunakan:
+
+- **PHP:** `arm32v7/php:8.1-apache`
+- **MariaDB:** `linuxserver/mariadb:arm32v7-latest`
+- **phpMyAdmin:** `arm32v7/phpmyadmin:latest`
+
+Semua image ini **TESTED dan COMPATIBLE** dengan Raspberry Pi 3 (ARM 32-bit).
+
+---
+
+## 🆘 Bantuan
+
+Jika masih ada masalah:
+
+1. **Cek logs lengkap:**
+   ```bash
+   docker compose logs
+   ```
+
+2. **Cek status:**
+   ```bash
+   docker compose ps
+   ```
+
+3. **Fresh restart:**
+   ```bash
+   docker compose down
+   docker compose up -d --build
+   ```
+
+4. **Nuclear option (reset semua):**
+   ```bash
+   docker compose down -v
+   docker system prune -a
+   docker compose up -d --build
+   ```
+
+---
+
+**Good luck! 🎉 Selamat menggunakan Sistem Kasir di Raspberry Pi 3!**
