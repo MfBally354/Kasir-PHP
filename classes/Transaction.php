@@ -1,5 +1,5 @@
 <?php
-// classes/Transaction.php
+// classes/Transaction.php - FIXED VERSION (No Lock)
 // Class untuk manage transactions
 
 class Transaction {
@@ -11,14 +11,27 @@ class Transaction {
         $this->productClass = new Product();
     }
     
-    // Create transaction
+    // Create transaction - SIMPLIFIED (No Transaction Lock)
     public function createTransaction($data, $items) {
         try {
-            // Begin transaction
-            $this->db->beginTransaction();
+            error_log("=== START CREATE TRANSACTION ===");
+            error_log("Transaction data: " . json_encode($data));
+            error_log("Items count: " . count($items));
+            
+            // Validate items first
+            foreach ($items as $item) {
+                $product = $this->productClass->getProductById($item['product_id']);
+                if (!$product) {
+                    throw new Exception("Produk '{$item['product_name']}' tidak ditemukan");
+                }
+                if ($product['stock'] < $item['quantity']) {
+                    throw new Exception("Stok '{$item['product_name']}' tidak mencukupi. Tersedia: {$product['stock']}");
+                }
+            }
             
             // Generate transaction code
             $data['transaction_code'] = generateTransactionCode();
+            error_log("Transaction code: " . $data['transaction_code']);
             
             // Insert transaction
             $transactionId = $this->db->insert('transactions', $data);
@@ -27,8 +40,12 @@ class Transaction {
                 throw new Exception('Gagal membuat transaksi');
             }
             
+            error_log("Transaction created with ID: $transactionId");
+            
             // Insert transaction details dan update stock
-            foreach ($items as $item) {
+            foreach ($items as $index => $item) {
+                error_log("Processing item " . ($index + 1) . ": " . $item['product_name']);
+                
                 $detailData = [
                     'transaction_id' => $transactionId,
                     'product_id' => $item['product_id'],
@@ -41,8 +58,10 @@ class Transaction {
                 $detailId = $this->db->insert('transaction_details', $detailData);
                 
                 if (!$detailId) {
-                    throw new Exception('Gagal menyimpan detail transaksi');
+                    throw new Exception('Gagal menyimpan detail transaksi untuk: ' . $item['product_name']);
                 }
+                
+                error_log("Detail saved with ID: $detailId");
                 
                 // Update stock produk
                 $updateStock = $this->productClass->updateStock(
@@ -52,12 +71,14 @@ class Transaction {
                 );
                 
                 if (!$updateStock['success']) {
-                    throw new Exception($updateStock['message']);
+                    error_log("Stock update failed: " . $updateStock['message']);
+                    throw new Exception('Gagal update stok: ' . $updateStock['message']);
                 }
+                
+                error_log("Stock updated: Product ID {$item['product_id']}, Old: {$updateStock['old_stock']}, New: {$updateStock['new_stock']}");
             }
             
-            // Commit transaction
-            $this->db->commit();
+            error_log("=== TRANSACTION COMPLETED SUCCESSFULLY ===");
             
             return [
                 'success' => true,
@@ -67,8 +88,21 @@ class Transaction {
             ];
             
         } catch (Exception $e) {
-            // Rollback jika ada error
-            $this->db->rollback();
+            error_log("=== TRANSACTION FAILED ===");
+            error_log("Error: " . $e->getMessage());
+            error_log("Trace: " . $e->getTraceAsString());
+            
+            // Rollback manual if transaction was created
+            if (isset($transactionId) && $transactionId) {
+                try {
+                    error_log("Attempting to delete transaction ID: $transactionId");
+                    $this->db->delete('transaction_details', 'transaction_id = :id', [':id' => $transactionId]);
+                    $this->db->delete('transactions', 'id = :id', [':id' => $transactionId]);
+                    error_log("Rollback completed");
+                } catch (Exception $rollbackError) {
+                    error_log("Rollback failed: " . $rollbackError->getMessage());
+                }
+            }
             
             return [
                 'success' => false,
@@ -107,31 +141,26 @@ class Transaction {
         
         $params = [];
         
-        // Filter by status
         if (isset($filters['status'])) {
             $sql .= " AND t.status = :status";
             $params[':status'] = $filters['status'];
         }
         
-        // Filter by transaction type
         if (isset($filters['transaction_type'])) {
             $sql .= " AND t.transaction_type = :transaction_type";
             $params[':transaction_type'] = $filters['transaction_type'];
         }
         
-        // Filter by user
         if (isset($filters['user_id'])) {
             $sql .= " AND t.user_id = :user_id";
             $params[':user_id'] = $filters['user_id'];
         }
         
-        // Filter by kasir
         if (isset($filters['kasir_id'])) {
             $sql .= " AND t.kasir_id = :kasir_id";
             $params[':kasir_id'] = $filters['kasir_id'];
         }
         
-        // Filter by date
         if (isset($filters['date_from'])) {
             $sql .= " AND DATE(t.created_at) >= :date_from";
             $params[':date_from'] = $filters['date_from'];
@@ -144,7 +173,6 @@ class Transaction {
         
         $sql .= " ORDER BY t.created_at DESC";
         
-        // Limit
         if (isset($filters['limit'])) {
             $sql .= " LIMIT " . intval($filters['limit']);
         }
@@ -176,9 +204,6 @@ class Transaction {
     // Cancel transaction
     public function cancelTransaction($id) {
         try {
-            $this->db->beginTransaction();
-            
-            // Get transaction
             $transaction = $this->getTransactionById($id);
             
             if (!$transaction) {
@@ -189,7 +214,6 @@ class Transaction {
                 throw new Exception('Transaksi sudah dibatalkan');
             }
             
-            // Get transaction details
             $details = $this->getTransactionDetails($id);
             
             // Restore stock
@@ -205,7 +229,6 @@ class Transaction {
                 }
             }
             
-            // Update status
             $result = $this->db->update('transactions', 
                 ['status' => 'cancelled'], 
                 'id = :id', 
@@ -216,16 +239,12 @@ class Transaction {
                 throw new Exception('Gagal mengupdate status transaksi');
             }
             
-            $this->db->commit();
-            
             return [
                 'success' => true,
                 'message' => 'Transaksi berhasil dibatalkan'
             ];
             
         } catch (Exception $e) {
-            $this->db->rollback();
-            
             return [
                 'success' => false,
                 'message' => $e->getMessage()
@@ -248,10 +267,13 @@ class Transaction {
             $params[':date_to'] = $filters['date_to'];
         }
         
-        // Total transaksi
+        if (isset($filters['kasir_id'])) {
+            $where .= " AND kasir_id = :kasir_id";
+            $params[':kasir_id'] = $filters['kasir_id'];
+        }
+        
         $totalTransactions = $this->db->count('transactions', $where, $params);
         
-        // Total pendapatan
         $sql = "SELECT SUM(total_amount) as total_revenue FROM transactions $where";
         $revenue = $this->db->fetch($sql, $params);
         
