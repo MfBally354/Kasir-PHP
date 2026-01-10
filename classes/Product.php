@@ -145,16 +145,14 @@ class Product {
         }
     }
     
-    // Update stock - FIXED VERSION
+    // Update stock - SIMPLE VERSION (No Lock)
     public function updateStock($productId, $quantity, $operation = 'subtract') {
         try {
-            // Get current stock with FOR UPDATE lock
-            $conn = $this->db->getConnection();
-            $stmt = $conn->prepare("SELECT stock FROM products WHERE id = :id FOR UPDATE");
-            $stmt->execute([':id' => $productId]);
-            $product = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Get current stock - NO LOCK
+            $product = $this->getProductById($productId);
             
             if (!$product) {
+                error_log("Product not found: ID $productId");
                 return [
                     'success' => false,
                     'message' => 'Produk tidak ditemukan'
@@ -163,10 +161,12 @@ class Product {
             
             $currentStock = (int)$product['stock'];
             $quantity = (int)$quantity;
-            $newStock = 0;
+            
+            error_log("Update stock - Product ID: $productId, Current: $currentStock, Qty: $quantity, Operation: $operation");
             
             if ($operation === 'subtract') {
                 if ($currentStock < $quantity) {
+                    error_log("Insufficient stock - Product ID: $productId, Available: $currentStock, Required: $quantity");
                     return [
                         'success' => false,
                         'message' => 'Stok tidak mencukupi. Tersedia: ' . $currentStock
@@ -177,15 +177,18 @@ class Product {
                 $newStock = $currentStock + $quantity;
             }
             
-            // Update stock directly
-            $updateStmt = $conn->prepare("UPDATE products SET stock = :stock WHERE id = :id");
-            $result = $updateStmt->execute([
+            // Update stock using simple UPDATE query
+            $conn = $this->db->getConnection();
+            $sql = "UPDATE products SET stock = :stock WHERE id = :id";
+            $stmt = $conn->prepare($sql);
+            
+            $result = $stmt->execute([
                 ':stock' => $newStock,
                 ':id' => $productId
             ]);
             
             if ($result) {
-                error_log("Stock updated successfully for product ID $productId: $currentStock -> $newStock");
+                error_log("Stock updated successfully - Product ID: $productId, Old: $currentStock, New: $newStock");
                 return [
                     'success' => true,
                     'message' => 'Stok berhasil diupdate',
@@ -193,15 +196,21 @@ class Product {
                     'new_stock' => $newStock
                 ];
             } else {
-                error_log("Failed to update stock for product ID $productId");
+                error_log("Failed to execute stock update - Product ID: $productId");
                 return [
                     'success' => false,
                     'message' => 'Gagal mengupdate stok'
                 ];
             }
             
+        } catch (PDOException $e) {
+            error_log("PDO Error in updateStock: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
         } catch (Exception $e) {
-            error_log("Stock update error: " . $e->getMessage());
+            error_log("General error in updateStock: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
