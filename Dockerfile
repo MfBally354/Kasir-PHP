@@ -1,25 +1,31 @@
 # ===================================
 # Dockerfile
-# PHP 8.1 dengan Apache
+# PHP 8.1 Apache untuk Raspberry Pi 3
+# Platform: linux/arm/v7 (32-bit)
 # ===================================
 
-FROM php:8.1-apache
+FROM arm32v7/php:8.1-apache
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies
+# Install system dependencies (optimized for ARM)
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
     libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
-    libzip-dev \
+    curl \
+    default-mysql-client \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure GD with JPEG support
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
 # Install PHP extensions
 RUN docker-php-ext-install \
@@ -33,33 +39,39 @@ RUN docker-php-ext-install \
     gd \
     zip
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Enable Apache modules
+RUN a2enmod rewrite headers
 
 # Configure Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Set upload limits
-RUN echo "upload_max_filesize = 10M" > /usr/local/etc/php/conf.d/uploads.ini \
-    && echo "post_max_size = 10M" >> /usr/local/etc/php/conf.d/uploads.ini \
-    && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/uploads.ini \
-    && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/uploads.ini
+# PHP Configuration
+RUN { \
+    echo "upload_max_filesize = 10M"; \
+    echo "post_max_size = 10M"; \
+    echo "max_execution_time = 300"; \
+    echo "memory_limit = 256M"; \
+    echo "display_errors = On"; \
+    echo "error_reporting = E_ALL"; \
+    echo "date.timezone = Asia/Jakarta"; \
+} > /usr/local/etc/php/conf.d/custom.ini
 
-# Create uploads directory
-RUN mkdir -p /var/www/html/uploads/products \
-    && chmod -R 777 /var/www/html/uploads
-
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Create uploads directory with correct permissions
+RUN mkdir -p /var/www/html/uploads/products && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
 
 # Configure Apache DocumentRoot
-ENV APACHE_DOCUMENT_ROOT /var/www/html
+ENV APACHE_DOCUMENT_ROOT=/var/www/html
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Configure Apache AllowOverride
+# Enable AllowOverride for .htaccess
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
 
 # Expose port 80
 EXPOSE 80
