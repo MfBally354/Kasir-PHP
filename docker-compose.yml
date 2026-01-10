@@ -1,11 +1,9 @@
 # ===================================
 # docker-compose.yml
 # Sistem Kasir PHP untuk Raspberry Pi 3
-# ARM32v7 Compatible
+# ARM32v7 Compatible (TESTED)
 # Port: 8090 (Web), 3307 (MySQL)
 # ===================================
-
-version: '3.8'
 
 services:
   # ===== PHP Apache Web Server (ARM32v7) =====
@@ -30,26 +28,29 @@ services:
 
   # ===== MariaDB untuk ARM32v7 =====
   db:
-    image: linuxserver/mariadb:arm32v7-latest
+    image: yobasystems/alpine-mariadb:10.4.17-armhf
     container_name: kasir_db
+    platform: linux/arm/v7
     ports:
       - "3307:3306"
     environment:
-      PUID: 1000
-      PGID: 1000
       MYSQL_ROOT_PASSWORD: "rootpassword123"
       MYSQL_DATABASE: kasir_db
       MYSQL_USER: iqbal
       MYSQL_PASSWORD: "#semarangwhj354iqbal#"
-      TZ: Asia/Jakarta
     volumes:
-      - mysql_data:/config
+      - mysql_data:/var/lib/mysql
       - ./database/kasir_db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
       - kasir_network
     restart: unless-stopped
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max_allowed_packet=64M
+      --innodb_buffer_pool_size=128M
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uiqbal", "-p#semarangwhj354iqbal#"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword123"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -57,15 +58,14 @@ services:
 
   # ===== phpMyAdmin ARM32v7 =====
   phpmyadmin:
-    image: arm32v7/phpmyadmin:latest
+    image: phpmyadmin/phpmyadmin:latest
     container_name: kasir_phpmyadmin
+    platform: linux/arm/v7
     ports:
       - "8091:80"
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
-      PMA_USER: iqbal
-      PMA_PASSWORD: "#semarangwhj354iqbal#"
       UPLOAD_LIMIT: 20M
     depends_on:
       - db
