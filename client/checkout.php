@@ -79,11 +79,12 @@ if (isPost()) {
         $result = $transactionClass->createTransaction($transactionData, $items);
         
         if ($result['success']) {
-            // Clear cart
-            $deleteCart = $db->delete('cart', 'user_id = :user_id', [':user_id' => $_SESSION['user_id']]);
-            
-            if (!$deleteCart) {
-                error_log("Warning: Failed to clear cart for user " . $_SESSION['user_id']);
+            // Clear cart - FIXED: gunakan query langsung
+            try {
+                $db->getConnection()->exec("DELETE FROM cart WHERE user_id = " . intval($_SESSION['user_id']));
+                error_log("Cart cleared successfully for user " . $_SESSION['user_id']);
+            } catch (Exception $e) {
+                error_log("Warning: Failed to clear cart: " . $e->getMessage());
             }
             
             // Set success message
