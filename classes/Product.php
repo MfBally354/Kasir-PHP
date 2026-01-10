@@ -1,5 +1,5 @@
 <?php
-// classes/Product.php
+// classes/Product.php - FIXED VERSION
 // Class untuk manage products
 
 class Product {
@@ -64,12 +64,10 @@ class Product {
     // Create product
     public function createProduct($data) {
         try {
-            // Generate SKU if not provided
             if (empty($data['sku'])) {
                 $data['sku'] = $this->generateSKU();
             }
             
-            // Set default image if not provided
             if (empty($data['image'])) {
                 $data['image'] = '';
             }
@@ -147,11 +145,14 @@ class Product {
         }
     }
     
-    // Update stock
+    // Update stock - FIXED VERSION
     public function updateStock($productId, $quantity, $operation = 'subtract') {
         try {
-            // Get current stock
-            $product = $this->getProductById($productId);
+            // Get current stock with FOR UPDATE lock
+            $conn = $this->db->getConnection();
+            $stmt = $conn->prepare("SELECT stock FROM products WHERE id = :id FOR UPDATE");
+            $stmt->execute([':id' => $productId]);
+            $product = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$product) {
                 return [
@@ -160,14 +161,15 @@ class Product {
                 ];
             }
             
-            $currentStock = $product['stock'];
+            $currentStock = (int)$product['stock'];
+            $quantity = (int)$quantity;
             $newStock = 0;
             
             if ($operation === 'subtract') {
                 if ($currentStock < $quantity) {
                     return [
                         'success' => false,
-                        'message' => 'Stok tidak mencukupi'
+                        'message' => 'Stok tidak mencukupi. Tersedia: ' . $currentStock
                     ];
                 }
                 $newStock = $currentStock - $quantity;
@@ -175,20 +177,23 @@ class Product {
                 $newStock = $currentStock + $quantity;
             }
             
-            // Update stock
-            $result = $this->db->update('products',
-                ['stock' => $newStock],
-                'id = :id',
-                [':id' => $productId]
-            );
+            // Update stock directly
+            $updateStmt = $conn->prepare("UPDATE products SET stock = :stock WHERE id = :id");
+            $result = $updateStmt->execute([
+                ':stock' => $newStock,
+                ':id' => $productId
+            ]);
             
             if ($result) {
+                error_log("Stock updated successfully for product ID $productId: $currentStock -> $newStock");
                 return [
                     'success' => true,
                     'message' => 'Stok berhasil diupdate',
+                    'old_stock' => $currentStock,
                     'new_stock' => $newStock
                 ];
             } else {
+                error_log("Failed to update stock for product ID $productId");
                 return [
                     'success' => false,
                     'message' => 'Gagal mengupdate stok'
@@ -196,9 +201,10 @@ class Product {
             }
             
         } catch (Exception $e) {
+            error_log("Stock update error: " . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Error: ' . $e->getMessage()
             ];
         }
     }
@@ -296,7 +302,6 @@ class Product {
     // Delete category
     public function deleteCategory($id) {
         try {
-            // Check if category has products
             $productCount = $this->db->count('products', 'category_id = :id', [':id' => $id]);
             
             if ($productCount > 0) {
