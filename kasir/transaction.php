@@ -456,8 +456,15 @@ $(document).ready(function() {
     // APPLY PAYMENT
     $('#applyPayment').on('click', function() {
         console.log('💳 Apply payment clicked');
+        console.log('🛒 Current cart:', cart);
+        console.log('📦 Cart length:', cart.length);
         
         const total = parseFloat($('#totalAmount').val());
+        
+        if (cart.length === 0) {
+            alert('Keranjang masih kosong!');
+            return;
+        }
         
         if (!calculator) {
             alert('Calculator belum siap!');
@@ -468,11 +475,6 @@ $(document).ready(function() {
         const payment = calculator.getValue();
         
         console.log('Payment calculation:', {total, payment});
-        
-        if (cart.length === 0) {
-            alert('Keranjang masih kosong!');
-            return;
-        }
         
         if (payment < total) {
             alert('Jumlah pembayaran kurang dari total!');
@@ -487,21 +489,38 @@ $(document).ready(function() {
         $('#changeDisplay').show();
         $('#submitPayment').prop('disabled', false);
         
+        // SET CART DATA DI SINI JUGA (untuk keamanan)
+        $('#cartData').val(JSON.stringify(cart));
+        
         console.log('✅ Payment applied:', {payment, change});
+        console.log('✅ Cart data set:', JSON.stringify(cart));
     });
     
     // SUBMIT PAYMENT FORM
     $('#paymentForm').on('submit', function(e) {
-        console.log('📤 Form submit');
+        console.log('📤 Form submit triggered');
+        console.log('🛒 Cart at submit:', cart);
+        console.log('📦 Cart length at submit:', cart.length);
         
-        if (cart.length === 0) {
+        // VALIDASI ULANG
+        if (!cart || cart.length === 0) {
             e.preventDefault();
-            alert('Keranjang masih kosong!');
+            alert('Keranjang masih kosong! Silakan tambah produk terlebih dahulu.');
+            console.error('❌ Cart is empty at form submit!');
             return false;
         }
         
-        $('#cartData').val(JSON.stringify(cart));
-        console.log('✅ Cart data set:', cart);
+        // SET CART DATA LAGI (pastikan ter-update)
+        const cartDataJSON = JSON.stringify(cart);
+        $('#cartData').val(cartDataJSON);
+        
+        console.log('✅ Cart data final:', cartDataJSON);
+        console.log('✅ Form will be submitted');
+        
+        // Disable button to prevent double submit
+        $('#submitPayment').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
+        
+        return true;
     });
     
     // Prevent backspace on customer name input
