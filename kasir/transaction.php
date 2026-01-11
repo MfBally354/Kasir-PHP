@@ -1,5 +1,5 @@
 <?php
-// kasir/transaction.php - FIXED VERSION
+// kasir/transaction.php - FIXED VERSION WITH DEBUG
 require_once '../config/config.php';
 requireRole('kasir');
 
@@ -56,7 +56,8 @@ include '../includes/header.php';
                                  data-id="<?php echo $product['id']; ?>"
                                  data-name="<?php echo htmlspecialchars($product['name']); ?>"
                                  data-price="<?php echo $product['price']; ?>"
-                                 data-stock="<?php echo $product['stock']; ?>">
+                                 data-stock="<?php echo $product['stock']; ?>"
+                                 style="cursor: pointer; transition: all 0.3s;">
                                 <div class="card-body p-2 text-center">
                                     <?php if ($product['image']): ?>
                                     <img src="<?php echo getImageUrl($product['image']); ?>" 
@@ -198,41 +199,43 @@ include '../includes/header.php';
     </div>
 </div>
 
+<style>
+.product-card-select:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    border-color: #0d6efd !important;
+}
+</style>
+
 <script>
+// GLOBAL VARIABLE
 let cart = [];
 
-// Add product to cart
-$('.product-card-select').on('click', function() {
-    const id = $(this).data('id');
-    const name = $(this).data('name');
-    const price = parseFloat($(this).data('price'));
-    const stock = parseInt($(this).data('stock'));
+console.log('🚀 Transaction page loaded');
+
+// Format Rupiah function
+function formatRupiah(angka) {
+    return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
+}
+
+// Calculate total
+function calculateTotal() {
+    let total = 0;
+    cart.forEach(item => {
+        total += item.price * item.quantity;
+    });
     
-    // Check if already in cart
-    const existingItem = cart.find(item => item.id === id);
+    $('.total-amount').text(formatRupiah(total));
+    $('#totalAmount').val(total);
     
-    if (existingItem) {
-        if (existingItem.quantity < stock) {
-            existingItem.quantity++;
-        } else {
-            alert('Stok tidak mencukupi!');
-            return;
-        }
-    } else {
-        cart.push({
-            id: id,
-            name: name,
-            price: price,
-            quantity: 1,
-            stock: stock
-        });
-    }
-    
-    renderCart();
-});
+    console.log('💰 Total calculated:', total);
+    return total;
+}
 
 // Render cart
 function renderCart() {
+    console.log('🔄 Rendering cart, items:', cart.length);
+    
     const cartItems = $('#cartItems');
     cartItems.empty();
     
@@ -277,8 +280,12 @@ function renderCart() {
 
 // Bind cart events
 function bindCartEvents() {
+    console.log('🔗 Binding cart events');
+    
     $('.qty-minus').off('click').on('click', function() {
         const index = $(this).data('index');
+        console.log('➖ Decrease quantity for item:', index);
+        
         if (cart[index].quantity > 1) {
             cart[index].quantity--;
             renderCart();
@@ -287,6 +294,8 @@ function bindCartEvents() {
     
     $('.qty-plus').off('click').on('click', function() {
         const index = $(this).data('index');
+        console.log('➕ Increase quantity for item:', index);
+        
         if (cart[index].quantity < cart[index].stock) {
             cart[index].quantity++;
             renderCart();
@@ -297,103 +306,164 @@ function bindCartEvents() {
     
     $('.remove-item').off('click').on('click', function() {
         const index = $(this).data('index');
+        console.log('🗑️ Remove item:', index);
+        
         cart.splice(index, 1);
         renderCart();
     });
 }
 
-// Calculate total
-function calculateTotal() {
-    let total = 0;
-    cart.forEach(item => {
-        total += item.price * item.quantity;
-    });
+// Add product to cart
+function addToCart(id, name, price, stock) {
+    console.log('➕ Adding to cart:', {id, name, price, stock});
     
-    $('.total-amount').text(formatRupiah(total));
-    $('#totalAmount').val(total);
-    return total;
-}
-
-// Apply payment
-$('#applyPayment').on('click', function() {
-    const total = parseFloat($('#totalAmount').val());
-    const payment = calculator.getValue();
+    // Check if already in cart
+    const existingItem = cart.find(item => item.id === id);
     
-    if (cart.length === 0) {
-        alert('Keranjang masih kosong!');
-        return;
-    }
-    
-    if (payment < total) {
-        alert('Jumlah pembayaran kurang dari total!');
-        return;
-    }
-    
-    const change = payment - total;
-    
-    $('#paymentAmount').val(payment);
-    $('#changeAmount').val(change);
-    $('#changeDisplayAmount').text(formatRupiah(change));
-    $('#changeDisplay').show();
-    $('#submitPayment').prop('disabled', false);
-});
-
-// Submit payment
-$('#paymentForm').on('submit', function(e) {
-    if (cart.length === 0) {
-        e.preventDefault();
-        alert('Keranjang masih kosong!');
-        return false;
-    }
-    
-    $('#cartData').val(JSON.stringify(cart));
-});
-
-// Format Rupiah
-function formatRupiah(angka) {
-    return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
-}
-
-// Search and filter
-$('#searchProduct').on('keyup', function() {
-    const value = $(this).val().toLowerCase();
-    $('.product-item').filter(function() {
-        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-    });
-});
-
-$('#categoryFilter').on('change', function() {
-    const categoryId = $(this).val();
-    if (categoryId) {
-        $('.product-item').hide();
-        $(`.product-item[data-category="${categoryId}"]`).show();
+    if (existingItem) {
+        if (existingItem.quantity < stock) {
+            existingItem.quantity++;
+            console.log('✅ Increased quantity for existing item');
+        } else {
+            alert('Stok tidak mencukupi!');
+            console.warn('⚠️ Stock not enough');
+            return;
+        }
     } else {
-        $('.product-item').show();
+        cart.push({
+            id: id,
+            name: name,
+            price: price,
+            quantity: 1,
+            stock: stock
+        });
+        console.log('✅ Added new item to cart');
     }
-});
+    
+    renderCart();
+}
 
-// FIX: Prevent backspace from triggering calculator when typing in input fields
-$(document).on('keydown', '#customerNameInput', function(e) {
-    // Stop event propagation to prevent calculator from catching it
-    e.stopPropagation();
-});
-
-// FIX: Disable keyboard calculator when focus on input
-$('#customerNameInput').on('focus', function() {
-    $(document).off('keydown.calculator');
-});
-
-$('#customerNameInput').on('blur', function() {
-    // Re-enable keyboard calculator after blur
-    setTimeout(function() {
-        enableKeyboardCalculator();
-    }, 100);
+// DOCUMENT READY
+$(document).ready(function() {
+    console.log('📄 Document ready');
+    console.log('🛒 jQuery version:', $.fn.jquery);
+    
+    // Check if products exist
+    const productCount = $('.product-card-select').length;
+    console.log('📦 Products found:', productCount);
+    
+    // PRODUCT CLICK EVENT - USING EVENT DELEGATION
+    $(document).on('click', '.product-card-select', function(e) {
+        e.preventDefault();
+        
+        const $this = $(this);
+        const id = $this.data('id');
+        const name = $this.data('name');
+        const price = parseFloat($this.data('price'));
+        const stock = parseInt($this.data('stock'));
+        
+        console.log('🖱️ Product clicked:', {id, name, price, stock});
+        
+        // Visual feedback
+        $this.css('background-color', '#e7f3ff');
+        setTimeout(() => {
+            $this.css('background-color', '');
+        }, 200);
+        
+        addToCart(id, name, price, stock);
+    });
+    
+    // SEARCH PRODUCT
+    $('#searchProduct').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        console.log('🔍 Searching:', value);
+        
+        $('.product-item').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+    
+    // FILTER BY CATEGORY
+    $('#categoryFilter').on('change', function() {
+        const categoryId = $(this).val();
+        console.log('🏷️ Filter category:', categoryId);
+        
+        if (categoryId) {
+            $('.product-item').hide();
+            $(`.product-item[data-category="${categoryId}"]`).show();
+        } else {
+            $('.product-item').show();
+        }
+    });
+    
+    // APPLY PAYMENT
+    $('#applyPayment').on('click', function() {
+        console.log('💳 Apply payment clicked');
+        
+        const total = parseFloat($('#totalAmount').val());
+        
+        if (!calculator) {
+            alert('Calculator belum siap!');
+            console.error('❌ Calculator not initialized');
+            return;
+        }
+        
+        const payment = calculator.getValue();
+        
+        console.log('Payment calculation:', {total, payment});
+        
+        if (cart.length === 0) {
+            alert('Keranjang masih kosong!');
+            return;
+        }
+        
+        if (payment < total) {
+            alert('Jumlah pembayaran kurang dari total!');
+            return;
+        }
+        
+        const change = payment - total;
+        
+        $('#paymentAmount').val(payment);
+        $('#changeAmount').val(change);
+        $('#changeDisplayAmount').text(formatRupiah(change));
+        $('#changeDisplay').show();
+        $('#submitPayment').prop('disabled', false);
+        
+        console.log('✅ Payment applied:', {payment, change});
+    });
+    
+    // SUBMIT PAYMENT FORM
+    $('#paymentForm').on('submit', function(e) {
+        console.log('📤 Form submit');
+        
+        if (cart.length === 0) {
+            e.preventDefault();
+            alert('Keranjang masih kosong!');
+            return false;
+        }
+        
+        $('#cartData').val(JSON.stringify(cart));
+        console.log('✅ Cart data set:', cart);
+    });
+    
+    // Prevent backspace on customer name input
+    $('#customerNameInput').on('focus', function() {
+        $(document).off('keydown.calculator');
+    });
+    
+    $('#customerNameInput').on('blur', function() {
+        setTimeout(function() {
+            enableKeyboardCalculator();
+        }, 100);
+    });
+    
+    console.log('✅ All event listeners attached');
 });
 
 // Enable keyboard calculator
 function enableKeyboardCalculator() {
     $(document).on('keydown.calculator', function(e) {
-        // Only if not focused on input
         if ($(e.target).is('input, textarea')) {
             return;
         }
@@ -424,8 +494,10 @@ function enableKeyboardCalculator() {
     });
 }
 
-// Initialize keyboard calculator
+// Initialize on page load
 enableKeyboardCalculator();
+
+console.log('✅ Transaction script loaded completely');
 </script>
 
 <?php include '../includes/footer.php'; ?>
