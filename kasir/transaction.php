@@ -68,13 +68,10 @@ include '../includes/header.php';
                                     <p class="mb-1 text-primary fw-bold small"><?php echo formatRupiah($product['price']); ?></p>
                                     <small class="text-muted d-block mb-2">Stok: <?php echo $product['stock']; ?></small>
                                     
-                                    <!-- TOMBOL TAMBAH KE KERANJANG -->
+                                    <!-- TOMBOL TAMBAH KE KERANJANG - DENGAN INLINE ONCLICK -->
                                     <button type="button" 
                                             class="btn btn-success btn-sm w-100 add-to-cart-btn"
-                                            data-id="<?php echo $product['id']; ?>"
-                                            data-name="<?php echo htmlspecialchars($product['name']); ?>"
-                                            data-price="<?php echo $product['price']; ?>"
-                                            data-stock="<?php echo $product['stock']; ?>">
+                                            onclick="addProductToCart(<?php echo $product['id']; ?>, '<?php echo addslashes($product['name']); ?>', <?php echo $product['price']; ?>, <?php echo $product['stock']; ?>, this)">
                                         <i class="bi bi-plus-circle me-1"></i>Tambah
                                     </button>
                                 </div>
@@ -237,114 +234,20 @@ include '../includes/header.php';
 </style>
 
 <script>
-// GLOBAL VARIABLE
+// ========================================
+// GLOBAL VARIABLES - HARUS DI ATAS
+// ========================================
 let cart = [];
 
 console.log('🚀 Transaction page loaded');
+console.log('✅ Cart initialized:', cart);
 
-// Format Rupiah function
-function formatRupiah(angka) {
-    return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
-}
-
-// Calculate total
-function calculateTotal() {
-    let total = 0;
-    cart.forEach(item => {
-        total += item.price * item.quantity;
-    });
-    
-    $('.total-amount').text(formatRupiah(total));
-    $('#totalAmount').val(total);
-    
-    console.log('💰 Total calculated:', total);
-    return total;
-}
-
-// Render cart
-function renderCart() {
-    console.log('🔄 Rendering cart, items:', cart.length);
-    
-    const cartItems = $('#cartItems');
-    cartItems.empty();
-    
-    if (cart.length === 0) {
-        cartItems.append(`
-            <tr id="emptyCart">
-                <td colspan="5" class="text-center text-muted py-4">
-                    Keranjang masih kosong
-                </td>
-            </tr>
-        `);
-        calculateTotal();
-        return;
-    }
-    
-    cart.forEach((item, index) => {
-        const subtotal = item.price * item.quantity;
-        cartItems.append(`
-            <tr>
-                <td>${item.name}</td>
-                <td class="text-center">
-                    <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
-                        <button class="btn btn-outline-secondary qty-minus" data-index="${index}" type="button">-</button>
-                        <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
-                        <button class="btn btn-outline-secondary qty-plus" data-index="${index}" type="button">+</button>
-                    </div>
-                </td>
-                <td class="text-end">${formatRupiah(item.price)}</td>
-                <td class="text-end subtotal">${formatRupiah(subtotal)}</td>
-                <td>
-                    <button class="btn btn-sm btn-danger remove-item" data-index="${index}" type="button">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `);
-    });
-    
-    calculateTotal();
-    bindCartEvents();
-}
-
-// Bind cart events
-function bindCartEvents() {
-    console.log('🔗 Binding cart events');
-    
-    $('.qty-minus').off('click').on('click', function() {
-        const index = $(this).data('index');
-        console.log('➖ Decrease quantity for item:', index);
-        
-        if (cart[index].quantity > 1) {
-            cart[index].quantity--;
-            renderCart();
-        }
-    });
-    
-    $('.qty-plus').off('click').on('click', function() {
-        const index = $(this).data('index');
-        console.log('➕ Increase quantity for item:', index);
-        
-        if (cart[index].quantity < cart[index].stock) {
-            cart[index].quantity++;
-            renderCart();
-        } else {
-            alert('Stok maksimal: ' + cart[index].stock);
-        }
-    });
-    
-    $('.remove-item').off('click').on('click', function() {
-        const index = $(this).data('index');
-        console.log('🗑️ Remove item:', index);
-        
-        cart.splice(index, 1);
-        renderCart();
-    });
-}
-
-// Add product to cart
-function addToCart(id, name, price, stock) {
-    console.log('➕ Adding to cart:', {id, name, price, stock});
+// ========================================
+// FUNCTION: ADD PRODUCT TO CART (INLINE ONCLICK)
+// ========================================
+function addProductToCart(id, name, price, stock, button) {
+    console.log('🛒 addProductToCart called!');
+    console.log('📦 Product data:', {id, name, price, stock});
     
     // Check if already in cart
     const existingItem = cart.find(item => item.id === id);
@@ -354,7 +257,7 @@ function addToCart(id, name, price, stock) {
             existingItem.quantity++;
             console.log('✅ Increased quantity for existing item');
         } else {
-            alert('Stok tidak mencukupi!');
+            alert('Stok tidak mencukupi! Maksimal: ' + stock);
             console.warn('⚠️ Stock not enough');
             return;
         }
@@ -369,53 +272,169 @@ function addToCart(id, name, price, stock) {
         console.log('✅ Added new item to cart');
     }
     
+    // Visual feedback on button
+    if (button) {
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ditambah!';
+        button.classList.add('btn-added');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-added');
+        }, 500);
+    }
+    
+    console.log('📊 Current cart:', cart);
+    
+    // Render cart
     renderCart();
 }
 
-// DOCUMENT READY
-$(document).ready(function() {
-    console.log('📄 Document ready');
-    console.log('🛒 jQuery version:', $.fn.jquery);
-    
-    // Check if products exist
-    const productCount = $('.add-to-cart-btn').length;
-    console.log('📦 Products found:', productCount);
-    
-    // ========================================
-    // EVENT: TOMBOL TAMBAH KE KERANJANG
-    // ========================================
-    $(document).on('click', '.add-to-cart-btn', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const $btn = $(this);
-        const id = $btn.data('id');
-        const name = $btn.data('name');
-        const price = parseFloat($btn.data('price'));
-        const stock = parseInt($btn.data('stock'));
-        
-        console.log('🛒 ADD TO CART clicked:', {id, name, price, stock});
-        
-        // Visual feedback - button animation
-        $btn.addClass('btn-added');
-        setTimeout(() => {
-            $btn.removeClass('btn-added');
-        }, 300);
-        
-        // Change button text temporarily
-        const originalText = $btn.html();
-        $btn.html('<i class="bi bi-check-circle me-1"></i>Ditambah!');
-        setTimeout(() => {
-            $btn.html(originalText);
-        }, 500);
-        
-        addToCart(id, name, price, stock);
+// ========================================
+// FORMAT RUPIAH FUNCTION
+// ========================================
+function formatRupiah(angka) {
+    return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
+}
+
+// ========================================
+// CALCULATE TOTAL
+// ========================================
+function calculateTotal() {
+    let total = 0;
+    cart.forEach(item => {
+        total += item.price * item.quantity;
     });
+    
+    const totalAmountElement = document.querySelector('.total-amount');
+    const totalAmountInput = document.getElementById('totalAmount');
+    
+    if (totalAmountElement) {
+        totalAmountElement.textContent = formatRupiah(total);
+    }
+    
+    if (totalAmountInput) {
+        totalAmountInput.value = total;
+    }
+    
+    console.log('💰 Total calculated:', total);
+    return total;
+}
+
+// ========================================
+// RENDER CART
+// ========================================
+function renderCart() {
+    console.log('🔄 Rendering cart, items:', cart.length);
+    
+    const cartItems = document.getElementById('cartItems');
+    
+    if (!cartItems) {
+        console.error('❌ Cart items element not found!');
+        return;
+    }
+    
+    cartItems.innerHTML = '';
+    
+    if (cart.length === 0) {
+        cartItems.innerHTML = `
+            <tr id="emptyCart">
+                <td colspan="5" class="text-center text-muted py-4">
+                    Keranjang masih kosong
+                </td>
+            </tr>
+        `;
+        calculateTotal();
+        return;
+    }
+    
+    cart.forEach((item, index) => {
+        const subtotal = item.price * item.quantity;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td class="text-center">
+                <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
+                    <button class="btn btn-outline-secondary" onclick="decreaseQty(${index})" type="button">-</button>
+                    <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
+                    <button class="btn btn-outline-secondary" onclick="increaseQty(${index})" type="button">+</button>
+                </div>
+            </td>
+            <td class="text-end">${formatRupiah(item.price)}</td>
+            <td class="text-end subtotal">${formatRupiah(subtotal)}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="removeItem(${index})" type="button">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        cartItems.appendChild(row);
+    });
+    
+    calculateTotal();
+    console.log('✅ Cart rendered successfully');
+}
+
+// ========================================
+// CART ACTIONS
+// ========================================
+function decreaseQty(index) {
+    console.log('➖ Decrease quantity for item:', index);
+    
+    if (cart[index].quantity > 1) {
+        cart[index].quantity--;
+        renderCart();
+    }
+}
+
+function increaseQty(index) {
+    console.log('➕ Increase quantity for item:', index);
+    
+    if (cart[index].quantity < cart[index].stock) {
+        cart[index].quantity++;
+        renderCart();
+    } else {
+        alert('Stok maksimal: ' + cart[index].stock);
+    }
+}
+
+function removeItem(index) {
+    console.log('🗑️ Remove item:', index);
+    
+    if (confirm('Hapus item dari keranjang?')) {
+        cart.splice(index, 1);
+        renderCart();
+    }
+}
+
+// ========================================
+// DOCUMENT READY
+// ========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM Content Loaded');
+    
+    // Test cart functions
+    console.log('🧪 Testing cart functionality...');
+    console.log('Cart array accessible:', typeof cart !== 'undefined');
+    console.log('addProductToCart function:', typeof addProductToCart === 'function');
+    console.log('renderCart function:', typeof renderCart === 'function');
+    
+    // Initialize cart display
+    renderCart();
+    
+    console.log('✅ Cart system initialized');
+});
+
+// ========================================
+// JQUERY READY (untuk fitur lain)
+// ========================================
+$(document).ready(function() {
+    console.log('📄 jQuery ready');
+    console.log('🛒 jQuery version:', $.fn.jquery);
     
     // SEARCH PRODUCT
     $('#searchProduct').on('keyup', function() {
         const value = $(this).val().toLowerCase();
-        console.log('🔍 Searching:', value);
         
         $('.product-item').filter(function() {
             $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
@@ -425,7 +444,6 @@ $(document).ready(function() {
     // FILTER BY CATEGORY
     $('#categoryFilter').on('change', function() {
         const categoryId = $(this).val();
-        console.log('🏷️ Filter category:', categoryId);
         
         if (categoryId) {
             $('.product-item').hide();
@@ -497,7 +515,7 @@ $(document).ready(function() {
         }, 100);
     });
     
-    console.log('✅ All event listeners attached');
+    console.log('✅ All jQuery event listeners attached');
 });
 
 // Enable keyboard calculator
@@ -534,7 +552,9 @@ function enableKeyboardCalculator() {
 }
 
 // Initialize on page load
-enableKeyboardCalculator();
+if (typeof $ !== 'undefined') {
+    enableKeyboardCalculator();
+}
 
 console.log('✅ Transaction script loaded completely');
 </script>
