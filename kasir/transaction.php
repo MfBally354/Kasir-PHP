@@ -137,7 +137,7 @@ include '../includes/header.php';
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Metode Pembayaran</label>
-                                <select class="form-select" name="payment_method" required>
+                                <select class="form-select" name="payment_method" id="paymentMethod" required>
                                     <option value="cash">Cash</option>
                                     <option value="debit">Debit Card</option>
                                     <option value="credit">Credit Card</option>
@@ -317,8 +317,25 @@ function calculateTotal() {
         totalAmountInput.value = total;
     }
     
+    // UPDATE CART DATA SETIAP KALI CALCULATE
+    updateCartData();
+    
     console.log('💰 Total calculated:', total);
     return total;
+}
+
+// ========================================
+// UPDATE CART DATA TO HIDDEN FIELD
+// ========================================
+function updateCartData() {
+    const cartDataField = document.getElementById('cartData');
+    if (cartDataField) {
+        const cartJSON = JSON.stringify(cart);
+        cartDataField.value = cartJSON;
+        console.log('📝 Cart data updated in hidden field:', cartJSON);
+    } else {
+        console.error('❌ cartData field not found!');
+    }
 }
 
 // ========================================
@@ -459,12 +476,13 @@ $(document).ready(function() {
         console.log('🛒 Current cart:', cart);
         console.log('📦 Cart length:', cart.length);
         
-        const total = parseFloat($('#totalAmount').val());
-        
+        // Validasi keranjang
         if (cart.length === 0) {
-            alert('Keranjang masih kosong!');
+            alert('Keranjang masih kosong! Silakan tambah produk terlebih dahulu.');
             return;
         }
+        
+        const total = parseFloat($('#totalAmount').val());
         
         if (!calculator) {
             alert('Calculator belum siap!');
@@ -487,38 +505,66 @@ $(document).ready(function() {
         $('#changeAmount').val(change);
         $('#changeDisplayAmount').text(formatRupiah(change));
         $('#changeDisplay').show();
+        
+        // UPDATE CART DATA
+        updateCartData();
+        
+        // Enable submit button
         $('#submitPayment').prop('disabled', false);
         
-        // SET CART DATA DI SINI JUGA (untuk keamanan)
-        $('#cartData').val(JSON.stringify(cart));
-        
         console.log('✅ Payment applied:', {payment, change});
-        console.log('✅ Cart data set:', JSON.stringify(cart));
+        console.log('✅ Cart data in hidden field:', $('#cartData').val());
     });
     
     // SUBMIT PAYMENT FORM
     $('#paymentForm').on('submit', function(e) {
+        e.preventDefault();
+        
         console.log('📤 Form submit triggered');
         console.log('🛒 Cart at submit:', cart);
         console.log('📦 Cart length at submit:', cart.length);
         
-        // VALIDASI ULANG
+        // VALIDASI KERANJANG
         if (!cart || cart.length === 0) {
-            e.preventDefault();
             alert('Keranjang masih kosong! Silakan tambah produk terlebih dahulu.');
             console.error('❌ Cart is empty at form submit!');
             return false;
         }
         
-        // SET CART DATA LAGI (pastikan ter-update)
-        const cartDataJSON = JSON.stringify(cart);
-        $('#cartData').val(cartDataJSON);
+        // VALIDASI PAYMENT
+        const paymentAmount = parseFloat($('#paymentAmount').val());
+        const totalAmount = parseFloat($('#totalAmount').val());
         
-        console.log('✅ Cart data final:', cartDataJSON);
-        console.log('✅ Form will be submitted');
+        if (!paymentAmount || paymentAmount <= 0) {
+            alert('Silakan hitung kembalian terlebih dahulu!');
+            return false;
+        }
+        
+        if (paymentAmount < totalAmount) {
+            alert('Jumlah pembayaran kurang dari total!');
+            return false;
+        }
+        
+        // UPDATE CART DATA SEKALI LAGI (untuk keamanan)
+        updateCartData();
+        
+        const cartDataValue = $('#cartData').val();
+        console.log('✅ Cart data final:', cartDataValue);
+        
+        // VALIDASI CART DATA
+        if (!cartDataValue || cartDataValue === '' || cartDataValue === '[]') {
+            alert('Error: Data keranjang kosong! Silakan refresh halaman dan coba lagi.');
+            console.error('❌ Cart data is empty in hidden field!');
+            return false;
+        }
         
         // Disable button to prevent double submit
         $('#submitPayment').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
+        
+        console.log('✅ Form validation passed, submitting...');
+        
+        // Submit form manually
+        this.submit();
         
         return true;
     });
