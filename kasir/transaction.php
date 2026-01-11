@@ -52,12 +52,7 @@ include '../includes/header.php';
                     <div class="row g-2" id="productList">
                         <?php foreach ($products as $product): ?>
                         <div class="col-6 product-item" data-category="<?php echo $product['category_id']; ?>">
-                            <div class="card h-100 cursor-pointer product-card-select" 
-                                 data-id="<?php echo $product['id']; ?>"
-                                 data-name="<?php echo htmlspecialchars($product['name']); ?>"
-                                 data-price="<?php echo $product['price']; ?>"
-                                 data-stock="<?php echo $product['stock']; ?>"
-                                 style="cursor: pointer; transition: all 0.3s;">
+                            <div class="card h-100" style="transition: all 0.3s;">
                                 <div class="card-body p-2 text-center">
                                     <?php if ($product['image']): ?>
                                     <img src="<?php echo getImageUrl($product['image']); ?>" 
@@ -70,8 +65,18 @@ include '../includes/header.php';
                                     </div>
                                     <?php endif; ?>
                                     <h6 class="mb-1 small"><?php echo $product['name']; ?></h6>
-                                    <p class="mb-0 text-primary fw-bold small"><?php echo formatRupiah($product['price']); ?></p>
-                                    <small class="text-muted">Stok: <?php echo $product['stock']; ?></small>
+                                    <p class="mb-1 text-primary fw-bold small"><?php echo formatRupiah($product['price']); ?></p>
+                                    <small class="text-muted d-block mb-2">Stok: <?php echo $product['stock']; ?></small>
+                                    
+                                    <!-- TOMBOL TAMBAH KE KERANJANG -->
+                                    <button type="button" 
+                                            class="btn btn-success btn-sm w-100 add-to-cart-btn"
+                                            data-id="<?php echo $product['id']; ?>"
+                                            data-name="<?php echo htmlspecialchars($product['name']); ?>"
+                                            data-price="<?php echo $product['price']; ?>"
+                                            data-stock="<?php echo $product['stock']; ?>">
+                                        <i class="bi bi-plus-circle me-1"></i>Tambah
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -200,10 +205,34 @@ include '../includes/header.php';
 </div>
 
 <style>
-.product-card-select:hover {
+/* Hover effect untuk card produk */
+.product-item .card:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-    border-color: #0d6efd !important;
+}
+
+/* Button add to cart effect */
+.add-to-cart-btn {
+    transition: all 0.2s;
+}
+
+.add-to-cart-btn:hover {
+    transform: scale(1.05);
+}
+
+.add-to-cart-btn:active {
+    transform: scale(0.95);
+}
+
+/* Animation saat item ditambah */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.btn-added {
+    animation: pulse 0.3s ease;
 }
 </style>
 
@@ -349,26 +378,36 @@ $(document).ready(function() {
     console.log('🛒 jQuery version:', $.fn.jquery);
     
     // Check if products exist
-    const productCount = $('.product-card-select').length;
+    const productCount = $('.add-to-cart-btn').length;
     console.log('📦 Products found:', productCount);
     
-    // PRODUCT CLICK EVENT - USING EVENT DELEGATION
-    $(document).on('click', '.product-card-select', function(e) {
+    // ========================================
+    // EVENT: TOMBOL TAMBAH KE KERANJANG
+    // ========================================
+    $(document).on('click', '.add-to-cart-btn', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         
-        const $this = $(this);
-        const id = $this.data('id');
-        const name = $this.data('name');
-        const price = parseFloat($this.data('price'));
-        const stock = parseInt($this.data('stock'));
+        const $btn = $(this);
+        const id = $btn.data('id');
+        const name = $btn.data('name');
+        const price = parseFloat($btn.data('price'));
+        const stock = parseInt($btn.data('stock'));
         
-        console.log('🖱️ Product clicked:', {id, name, price, stock});
+        console.log('🛒 ADD TO CART clicked:', {id, name, price, stock});
         
-        // Visual feedback
-        $this.css('background-color', '#e7f3ff');
+        // Visual feedback - button animation
+        $btn.addClass('btn-added');
         setTimeout(() => {
-            $this.css('background-color', '');
-        }, 200);
+            $btn.removeClass('btn-added');
+        }, 300);
+        
+        // Change button text temporarily
+        const originalText = $btn.html();
+        $btn.html('<i class="bi bi-check-circle me-1"></i>Ditambah!');
+        setTimeout(() => {
+            $btn.html(originalText);
+        }, 500);
         
         addToCart(id, name, price, stock);
     });
