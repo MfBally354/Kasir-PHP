@@ -1,6 +1,6 @@
 <?php
 // ===================================
-// kasir/process_payment.php - FIXED
+// kasir/process_payment.php - WITH DEBUG
 // ===================================
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -26,51 +26,26 @@ $paymentAmount = post('payment_amount');
 $changeAmount = post('change_amount');
 $paymentMethod = post('payment_method');
 $customerName = post('customer_name', 'Walk-in Customer');
-
-// PENTING: Gunakan $_POST langsung untuk cart_data (jangan di-sanitize)
-$cartData = isset($_POST['cart_data']) ? $_POST['cart_data'] : '';
+$cartData = post('cart_data');
 
 error_log("Total Amount: $totalAmount");
 error_log("Payment Amount: $paymentAmount");
 error_log("Change Amount: $changeAmount");
 error_log("Payment Method: $paymentMethod");
 error_log("Customer Name: $customerName");
-error_log("Cart Data RAW: $cartData");
-error_log("Cart Data Type: " . gettype($cartData));
-error_log("Cart Data Length: " . strlen($cartData));
+error_log("Cart Data: $cartData");
 
-// FIX: Cek apakah cart data ada dan tidak kosong
-if (empty($cartData) || trim($cartData) === '' || $cartData === '[]') {
-    error_log("ERROR: Cart data is empty or invalid");
-    setFlashMessage('Keranjang kosong! Silakan tambah produk terlebih dahulu.', 'danger');
-    redirect('/kasir/transaction.php');
-}
-
-// Decode cart data dengan error handling
+// Decode cart data
 $cart = json_decode($cartData, true);
-$jsonError = json_last_error();
 
-error_log("JSON Decode Error Code: $jsonError");
-error_log("JSON Decode Error Message: " . json_last_error_msg());
-error_log("Decoded Cart Type: " . gettype($cart));
 error_log("Decoded Cart: " . print_r($cart, true));
+error_log("Cart is empty: " . (empty($cart) ? 'YES' : 'NO'));
 
-// FIX: Cek json_decode error
-if ($jsonError !== JSON_ERROR_NONE) {
-    error_log("ERROR: JSON decode failed - " . json_last_error_msg());
-    setFlashMessage('Error decode data keranjang: ' . json_last_error_msg(), 'danger');
+if (empty($cart)) {
+    error_log("ERROR: Cart is empty!");
+    setFlashMessage('Keranjang kosong! Data: ' . $cartData, 'danger');
     redirect('/kasir/transaction.php');
 }
-
-// FIX: Cek apakah $cart adalah array dan tidak kosong
-if (!is_array($cart) || empty($cart)) {
-    error_log("ERROR: Cart is not an array or is empty after decode");
-    error_log("Cart value: " . var_export($cart, true));
-    setFlashMessage('Keranjang kosong atau format data tidak valid!', 'danger');
-    redirect('/kasir/transaction.php');
-}
-
-error_log("SUCCESS: Cart decoded successfully with " . count($cart) . " items");
 
 // Validasi total amount
 if (empty($totalAmount) || $totalAmount <= 0) {
@@ -88,6 +63,12 @@ if (empty($paymentAmount) || $paymentAmount < $totalAmount) {
 
 // Create temporary customer if needed
 $userId = $_SESSION['user_id']; // Default to kasir as customer
+
+// If customer name provided, check if exists or create
+if ($customerName && $customerName != 'Walk-in Customer') {
+    // For simplicity, use kasir ID. In real app, you might want to create temp customer
+    $userId = $_SESSION['user_id'];
+}
 
 // Prepare transaction data
 $transactionData = [
@@ -107,13 +88,6 @@ error_log("Transaction Data: " . print_r($transactionData, true));
 // Prepare items
 $items = [];
 foreach ($cart as $item) {
-    // Validasi setiap item
-    if (!isset($item['id']) || !isset($item['name']) || !isset($item['price']) || !isset($item['quantity'])) {
-        error_log("ERROR: Invalid item structure: " . print_r($item, true));
-        setFlashMessage('Data produk tidak lengkap!', 'danger');
-        redirect('/kasir/transaction.php');
-    }
-    
     $items[] = [
         'product_id' => $item['id'],
         'product_name' => $item['name'],
@@ -123,7 +97,6 @@ foreach ($cart as $item) {
     ];
 }
 
-error_log("Transaction Items Count: " . count($items));
 error_log("Transaction Items: " . print_r($items, true));
 
 // Create transaction

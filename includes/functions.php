@@ -280,32 +280,6 @@ function roleBadge($role) {
     return "<span class='badge bg-$badgeClass'>$roleText</span>";
 }
 
-// includes/functions.php - FIXED VERSION
-// Tambahkan ini di file functions.php yang sudah ada
 
-// Get POST data - FIXED VERSION
-function post($key, $default = null) {
-    if (!isset($_POST[$key])) {
-        return $default;
-    }
-
-    $value = $_POST[$key];
-
-    // JANGAN sanitize jika key adalah 'cart_data' atau data JSON lainnya
-    $noSanitizeKeys = ['cart_data', 'json_data'];
-
-    if (in_array($key, $noSanitizeKeys)) {
-        // Return raw value untuk JSON data
-        return $value;
-    }
-
-    // Sanitize untuk key lainnya
-    return sanitize($value);
-}
-
-// Atau buat fungsi khusus untuk get raw POST
-function postRaw($key, $default = null) {
-    return isset($_POST[$key]) ? $_POST[$key] : $default;
-}
 
 ?>
