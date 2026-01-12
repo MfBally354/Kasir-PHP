@@ -1,6 +1,6 @@
 <?php
 // ===================================
-// kasir/process_payment.php - WITH DEBUG
+// kasir/process_payment.php - FIXED VERSION
 // ===================================
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -9,7 +9,7 @@ require_once '../config/config.php';
 requireRole('kasir');
 
 // LOG untuk debugging
-error_log("=== PROCESS PAYMENT DEBUG ===");
+error_log("=== PROCESS PAYMENT START ===");
 error_log("POST data: " . print_r($_POST, true));
 
 if (!isPost()) {
@@ -26,24 +26,51 @@ $paymentAmount = post('payment_amount');
 $changeAmount = post('change_amount');
 $paymentMethod = post('payment_method');
 $customerName = post('customer_name', 'Walk-in Customer');
-$cartData = post('cart_data');
+$cartData = post('cart_data'); // Masih string JSON
 
-error_log("Total Amount: $totalAmount");
-error_log("Payment Amount: $paymentAmount");
-error_log("Change Amount: $changeAmount");
-error_log("Payment Method: $paymentMethod");
-error_log("Customer Name: $customerName");
-error_log("Cart Data: $cartData");
+error_log("Raw Cart Data String: " . $cartData);
+error_log("Cart Data Length: " . strlen($cartData));
 
-// Decode cart data
+// ========================================
+// FIX: Decode JSON dengan error handling
+// ========================================
 $cart = json_decode($cartData, true);
+$jsonError = json_last_error();
+
+error_log("JSON Decode Error Code: " . $jsonError);
+
+if ($jsonError !== JSON_ERROR_NONE) {
+    error_log("JSON ERROR: " . json_last_error_msg());
+    
+    // Try to fix common issues
+    // 1. Remove extra slashes
+    $cartData = stripslashes($cartData);
+    error_log("After stripslashes: " . $cartData);
+    
+    // 2. Decode again
+    $cart = json_decode($cartData, true);
+    $jsonError = json_last_error();
+    
+    if ($jsonError !== JSON_ERROR_NONE) {
+        error_log("Still JSON ERROR after stripslashes: " . json_last_error_msg());
+        setFlashMessage('Error decoding cart data: ' . json_last_error_msg() . ' | Data: ' . substr($cartData, 0, 100), 'danger');
+        redirect('/kasir/transaction.php');
+    }
+}
 
 error_log("Decoded Cart: " . print_r($cart, true));
-error_log("Cart is empty: " . (empty($cart) ? 'YES' : 'NO'));
+error_log("Cart is array: " . (is_array($cart) ? 'YES' : 'NO'));
+error_log("Cart count: " . (is_array($cart) ? count($cart) : '0'));
 
-if (empty($cart)) {
-    error_log("ERROR: Cart is empty!");
-    setFlashMessage('Keranjang kosong! Data: ' . $cartData, 'danger');
+// ========================================
+// Validasi cart
+// ========================================
+if (!is_array($cart) || empty($cart)) {
+    error_log("ERROR: Cart is empty or not array!");
+    error_log("Cart variable type: " . gettype($cart));
+    error_log("Cart variable value: " . var_export($cart, true));
+    
+    setFlashMessage('Keranjang kosong! Silakan tambah produk terlebih dahulu. Debug: ' . gettype($cart), 'danger');
     redirect('/kasir/transaction.php');
 }
 
@@ -61,14 +88,8 @@ if (empty($paymentAmount) || $paymentAmount < $totalAmount) {
     redirect('/kasir/transaction.php');
 }
 
-// Create temporary customer if needed
-$userId = $_SESSION['user_id']; // Default to kasir as customer
-
-// If customer name provided, check if exists or create
-if ($customerName && $customerName != 'Walk-in Customer') {
-    // For simplicity, use kasir ID. In real app, you might want to create temp customer
-    $userId = $_SESSION['user_id'];
-}
+// Create customer (gunakan kasir sebagai customer untuk walk-in)
+$userId = $_SESSION['user_id'];
 
 // Prepare transaction data
 $transactionData = [
@@ -88,6 +109,13 @@ error_log("Transaction Data: " . print_r($transactionData, true));
 // Prepare items
 $items = [];
 foreach ($cart as $item) {
+    // Validasi item
+    if (!isset($item['id']) || !isset($item['name']) || !isset($item['price']) || !isset($item['quantity'])) {
+        error_log("ERROR: Invalid item structure: " . print_r($item, true));
+        setFlashMessage('Item tidak valid dalam keranjang!', 'danger');
+        redirect('/kasir/transaction.php');
+    }
+    
     $items[] = [
         'product_id' => $item['id'],
         'product_name' => $item['name'],
