@@ -1,6 +1,6 @@
 <?php
 // ===================================
-// client/order_detail.php
+// client/order_detail.php - FIXED
 // ===================================
 require_once '../config/config.php';
 requireRole('client');
@@ -76,7 +76,7 @@ include '../includes/header.php';
                     <hr>
                     <div>
                         <small class="text-muted">Catatan</small>
-                        <p class="mb-0"><?php echo $order['notes']; ?></p>
+                        <p class="mb-0"><?php echo nl2br(htmlspecialchars($order['notes'])); ?></p>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -125,7 +125,7 @@ include '../includes/header.php';
         
         <div class="col-lg-4">
             <!-- Payment Summary -->
-            <div class="card border-0 shadow-sm">
+            <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white">
                     <h5 class="mb-0">Ringkasan Pembayaran</h5>
                 </div>
@@ -142,9 +142,21 @@ include '../includes/header.php';
                     
                     <?php if ($order['status'] == 'pending'): ?>
                     <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Menunggu Pembayaran</strong><br>
-                        <small>Silakan lakukan pembayaran melalui metode yang dipilih</small>
+                        <h6 class="alert-heading">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Menunggu Konfirmasi Kasir
+                        </h6>
+                        <hr>
+                        <p class="mb-2"><strong>Langkah Selanjutnya:</strong></p>
+                        <ol class="mb-2 ps-3">
+                            <li>Tunjukkan <strong>Kode Pesanan</strong> ke kasir</li>
+                            <li>Lakukan pembayaran via <strong><?php echo ucfirst($order['payment_method']); ?></strong></li>
+                            <li>Tunggu konfirmasi dari kasir</li>
+                        </ol>
+                        <div class="bg-white p-2 rounded text-center">
+                            <small class="text-muted d-block">Kode Pesanan Anda:</small>
+                            <h4 class="mb-0 fw-bold text-dark"><?php echo $order['transaction_code']; ?></h4>
+                        </div>
                     </div>
                     <?php elseif ($order['status'] == 'completed'): ?>
                     <div class="alert alert-success">
@@ -155,7 +167,8 @@ include '../includes/header.php';
                     <?php elseif ($order['status'] == 'cancelled'): ?>
                     <div class="alert alert-danger">
                         <i class="bi bi-x-circle me-2"></i>
-                        <strong>Pesanan Dibatalkan</strong>
+                        <strong>Pesanan Dibatalkan</strong><br>
+                        <small>Stok sudah dikembalikan</small>
                     </div>
                     <?php endif; ?>
                     
