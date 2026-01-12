@@ -314,7 +314,7 @@ Dibuat dengan ❤️ menggunakan PHP Native + Bootstrap
 
 ## 📄 License
 
-Free to use for educational purposes.
+Free to use for educational purposes. Silahkan!
 
 ---
 
@@ -326,3 +326,4 @@ Jika ada pertanyaan atau issue:
 3. Review kode di file terkait
 
 **Selamat menggunakan Sistem Kasir!!! 🎉**
+
