@@ -1,11 +1,11 @@
 <?php
 // ===================================
 // client/checkout.php - FIXED VERSION
+// Status jadi "pending" untuk menunggu approval kasir
 // ===================================
 require_once '../config/config.php';
 requireRole('client');
 
-// Set timeout lebih lama
 set_time_limit(60);
 
 $pageTitle = 'Checkout';
@@ -32,16 +32,14 @@ foreach ($cartItems as $item) {
 // Process checkout
 if (isPost()) {
     try {
-        // Get form data
         $paymentMethod = post('payment_method');
         $notes = post('notes');
         
-        // Validasi
         if (empty($paymentMethod)) {
             throw new Exception('Metode pembayaran harus dipilih!');
         }
         
-        // Cek stok sekali lagi
+        // Cek stok
         foreach ($cartItems as $item) {
             if ($item['quantity'] > $item['stock']) {
                 throw new Exception("Stok {$item['name']} tidak mencukupi!");
@@ -50,16 +48,16 @@ if (isPost()) {
         
         $transactionClass = new Transaction();
         
-        // Prepare transaction data
+        // FIXED: Status jadi "pending" untuk approval kasir
         $transactionData = [
             'user_id' => $_SESSION['user_id'],
-            'kasir_id' => null,
+            'kasir_id' => null, // Akan diisi oleh kasir yang approve
             'total_amount' => $total,
             'payment_amount' => $total,
             'change_amount' => 0,
             'payment_method' => $paymentMethod,
             'transaction_type' => 'client',
-            'status' => 'pending',
+            'status' => 'pending', // ⚠️ CHANGED: pending dulu, tunggu approval kasir
             'notes' => $notes
         ];
         
@@ -79,7 +77,7 @@ if (isPost()) {
         $result = $transactionClass->createTransaction($transactionData, $items);
         
         if ($result['success']) {
-            // Clear cart - FIXED: gunakan query langsung
+            // Clear cart
             try {
                 $db->getConnection()->exec("DELETE FROM cart WHERE user_id = " . intval($_SESSION['user_id']));
                 error_log("Cart cleared successfully for user " . $_SESSION['user_id']);
@@ -87,10 +85,13 @@ if (isPost()) {
                 error_log("Warning: Failed to clear cart: " . $e->getMessage());
             }
             
-            // Set success message
-            setFlashMessage('Pesanan berhasil dibuat! Kode: ' . $result['transaction_code'], 'success');
+            // FIXED: Pesan yang lebih jelas
+            setFlashMessage(
+                'Pesanan berhasil dibuat! Kode: ' . $result['transaction_code'] . 
+                '<br><small>Pesanan Anda menunggu konfirmasi dari kasir. Silakan lakukan pembayaran.</small>', 
+                'success'
+            );
             
-            // Redirect
             redirect('/client/order_detail.php?id=' . $result['transaction_id']);
         } else {
             throw new Exception($result['message']);
@@ -99,7 +100,6 @@ if (isPost()) {
     } catch (Exception $e) {
         error_log("Checkout Error: " . $e->getMessage());
         setFlashMessage('Checkout gagal: ' . $e->getMessage(), 'danger');
-        // Jangan redirect, tampilkan error di halaman yang sama
     }
 }
 
@@ -114,6 +114,20 @@ include '../includes/header.php';
     </div>
     
     <?php displayFlashMessage(); ?>
+    
+    <!-- INFO: Cara Pembayaran -->
+    <div class="alert alert-info mb-4">
+        <h5 class="alert-heading">
+            <i class="bi bi-info-circle me-2"></i>Cara Pembayaran
+        </h5>
+        <ol class="mb-0">
+            <li>Lengkapi form checkout di bawah</li>
+            <li>Klik <strong>"Buat Pesanan"</strong></li>
+            <li>Lakukan pembayaran ke kasir dengan <strong>Kode Pesanan</strong> Anda</li>
+            <li>Kasir akan mengkonfirmasi pembayaran Anda</li>
+            <li>Selesai! Pesanan Anda siap diambil</li>
+        </ol>
+    </div>
     
     <div class="row g-3">
         <div class="col-lg-8">
@@ -144,17 +158,18 @@ include '../includes/header.php';
                             <label class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
                             <select class="form-select" name="payment_method" required>
                                 <option value="">Pilih Metode</option>
-                                <option value="cash">Cash</option>
-                                <option value="debit">Debit Card</option>
-                                <option value="credit">Credit Card</option>
-                                <option value="ewallet">E-Wallet</option>
+                                <option value="cash">💵 Cash</option>
+                                <option value="debit">💳 Debit Card</option>
+                                <option value="credit">💳 Credit Card</option>
+                                <option value="ewallet">📱 E-Wallet (GoPay/OVO/Dana)</option>
                             </select>
+                            <small class="text-muted">Pembayaran dilakukan langsung ke kasir</small>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Catatan (Opsional)</label>
                             <textarea class="form-control" name="notes" rows="3" 
-                                      placeholder="Tambahkan catatan untuk pesanan Anda"></textarea>
+                                      placeholder="Contoh: Pesanan untuk makan di tempat, tolong sediakan sendok garpu"></textarea>
                         </div>
                         
                         <div class="d-grid gap-2">
@@ -187,6 +202,29 @@ include '../includes/header.php';
                     </div>
                 </div>
             </div>
+            
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="bi bi-shield-check text-success me-2"></i>
+                        Pembayaran Aman
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Pesanan dikonfirmasi kasir</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Stok terjamin tersedia</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <small>Data aman & terenkripsi</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -195,12 +233,9 @@ include '../includes/header.php';
 // Prevent double submit
 document.getElementById('checkoutForm').addEventListener('submit', function(e) {
     const btn = document.getElementById('btnCheckout');
-    
-    // Disable button
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
     
-    // Re-enable setelah 10 detik (jika masih di halaman ini)
     setTimeout(function() {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Buat Pesanan';
