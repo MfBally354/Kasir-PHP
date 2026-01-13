@@ -4,7 +4,7 @@ require_once '../config/config.php';
 requireRole('kasir');
 
 $pageTitle = 'Transaksi Baru';
-//$includeCalculator = true;
+$includeCalculator = true;
 
 $productClass = new Product();
 $products = $productClass->getAllProducts('available');
