@@ -1,6 +1,6 @@
 <?php
 // classes/Transaction.php - FIXED VERSION
-// Transaksi dari kasir otomatis 'completed', dari client tetap 'pending'
+// FIX: SQL Syntax error di getStatistics()
 
 class Transaction {
     private $db;
@@ -11,7 +11,7 @@ class Transaction {
         $this->productClass = new Product();
     }
 
-    // Create transaction - FIXED: Auto complete untuk transaksi kasir
+    // Create transaction - Auto complete untuk kasir
     public function createTransaction($data, $items) {
         try {
             error_log("=== START CREATE TRANSACTION ===");
@@ -33,7 +33,6 @@ class Transaction {
             $data['transaction_code'] = generateTransactionCode();
             
             // FIXED: Jika transaksi dari kasir, langsung set status 'completed'
-            // Jika dari client, tetap 'pending' menunggu approval
             if ($data['transaction_type'] === 'kasir' && !isset($data['status'])) {
                 $data['status'] = 'completed';
                 error_log("Transaction type: kasir - Auto setting status to 'completed'");
@@ -264,10 +263,10 @@ class Transaction {
         }
     }
 
-    // FIXED: Get transaction statistics - Include ALL statuses
+    // FIXED: Get transaction statistics - SQL SYNTAX ERROR FIXED!
     public function getStatistics($filters = []) {
-        // FIXED: Tidak hanya 'completed', tapi semua status kecuali 'cancelled'
-        $where = "WHERE status != 'cancelled'";
+        // FIXED: Tambahkan table name sebelum WHERE
+        $where = "status != 'cancelled'";  // Tanpa WHERE dulu
         $params = [];
 
         if (isset($filters['date_from'])) {
@@ -284,15 +283,14 @@ class Transaction {
             $where .= " AND kasir_id = :kasir_id";
             $params[':kasir_id'] = $filters['kasir_id'];
         }
-        
-        // FIXED: Filter hanya transaksi yang ada kasir_id (dari kasir) DAN completed client orders
-        if (!isset($filters['include_pending'])) {
-            $where .= " AND (kasir_id IS NOT NULL OR status = 'completed')";
-        }
 
+        // Count transactions using Database count method
         $totalTransactions = $this->db->count('transactions', $where, $params);
 
-        $sql = "SELECT SUM(total_amount) as total_revenue FROM transactions $where";
+        // Sum revenue
+        $sql = "SELECT SUM(total_amount) as total_revenue 
+                FROM transactions 
+                WHERE " . $where;
         $revenue = $this->db->fetch($sql, $params);
 
         return [
@@ -323,7 +321,7 @@ class Transaction {
 
     // Get best selling products
     public function getBestSellingProducts($limit = 10, $filters = []) {
-        $where = "WHERE t.status != 'cancelled'";
+        $where = "t.status != 'cancelled'";  // Tanpa WHERE dulu
         $params = [];
 
         if (isset($filters['date_from'])) {
@@ -344,7 +342,7 @@ class Transaction {
                 FROM transaction_details td
                 JOIN transactions t ON td.transaction_id = t.id
                 LEFT JOIN products p ON td.product_id = p.id
-                $where
+                WHERE " . $where . "
                 GROUP BY td.product_id, td.product_name, p.image
                 ORDER BY total_sold DESC
                 LIMIT $limit";
