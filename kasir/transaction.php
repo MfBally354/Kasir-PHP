@@ -1,10 +1,10 @@
 <?php
-// kasir/transaction.php - FIXED WITH CHANGE DISPLAY
+// kasir/transaction.php - HYBRID VERSION (pakai calculator.js + fix display)
 require_once '../config/config.php';
 requireRole('kasir');
 
 $pageTitle = 'Transaksi Baru';
-$includeCalculator = true;
+$includeCalculator = true; // TETAP PAKAI calculator.js
 
 $productClass = new Product();
 $products = $productClass->getAllProducts('available');
@@ -113,7 +113,7 @@ include '../includes/header.php';
                 </div>
                 <div class="card-footer bg-white">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Total:</h5>
+                        <h5 class="mb-0">Total Belanja:</h5>
                         <h3 class="mb-0 fw-bold text-success total-amount">Rp 0</h3>
                     </div>
                 </div>
@@ -154,11 +154,11 @@ include '../includes/header.php';
                         <div class="alert alert-info mb-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold">💰 Total Belanja:</span>
-                                <span class="fs-5 fw-bold total-amount-alert">Rp 0</span>
+                                <span class="fs-5 fw-bold total-amount-info">Rp 0</span>
                             </div>
                         </div>
 
-                        <!-- Calculator -->
+                        <!-- Calculator Display -->
                         <div class="mb-3">
                             <label class="form-label fw-bold">Jumlah Bayar</label>
                             <div id="calculatorDisplay" class="calculator-display">Rp 0</div>
@@ -190,18 +190,18 @@ include '../includes/header.php';
                             <div class="col-3"><button type="button" class="btn btn-outline-info btn-sm w-100 quick-amount" data-amount="100000">100k</button></div>
                         </div>
 
-                        <button type="button" class="btn btn-primary w-100 mb-2" id="applyPayment">
+                        <button type="button" class="btn btn-primary w-100 mb-3" id="applyPayment">
                             <i class="bi bi-calculator me-2"></i>Hitung Kembalian
                         </button>
 
-                        <!-- KEMBALIAN DISPLAY - LEBIH BESAR & JELAS -->
-                        <div id="changeDisplay" class="alert alert-success border-success" style="display: none;">
-                            <div class="text-center py-2">
+                        <!-- KEMBALIAN DISPLAY - BESAR & JELAS -->
+                        <div id="changeDisplay" class="alert alert-success border-2 border-success" style="display: none;">
+                            <div class="text-center py-3">
                                 <div class="mb-2">
-                                    <i class="bi bi-cash-stack fs-3 text-success"></i>
+                                    <i class="bi bi-cash-stack" style="font-size: 3rem; color: #198754;"></i>
                                 </div>
-                                <h6 class="mb-2 fw-bold text-success">KEMBALIAN</h6>
-                                <h2 class="mb-0 fw-bold text-success" id="changeDisplayAmount">Rp 0</h2>
+                                <h5 class="fw-bold text-success mb-2">💵 KEMBALIAN</h5>
+                                <h1 class="fw-bold text-success mb-0" id="changeDisplayAmount" style="font-size: 2.5rem;">Rp 0</h1>
                             </div>
                         </div>
 
@@ -216,7 +216,6 @@ include '../includes/header.php';
 </div>
 
 <style>
-/* Calculator Display */
 .calculator-display {
     background: #f8f9fa;
     border: 2px solid #dee2e6;
@@ -227,25 +226,19 @@ include '../includes/header.php';
     text-align: right;
     color: #495057;
     min-height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
 }
 
-/* Calculator Buttons */
 .calculator-btn {
     height: 60px;
     font-size: 1.2rem;
     font-weight: 600;
 }
 
-/* Hover effect untuk card produk */
 .product-item .card:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
-/* Button add to cart effect */
 .add-to-cart-btn {
     transition: all 0.2s;
 }
@@ -254,22 +247,15 @@ include '../includes/header.php';
     transform: scale(1.05);
 }
 
-.add-to-cart-btn:active {
-    transform: scale(0.95);
-}
-
-/* Animation saat item ditambah */
 @keyframes pulse {
-    0% { transform: scale(1); }
+    0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
 }
 
 .btn-added {
     animation: pulse 0.3s ease;
 }
 
-/* Change Display Animation */
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -282,23 +268,30 @@ include '../includes/header.php';
 }
 
 #changeDisplay {
-    animation: slideDown 0.3s ease;
+    animation: slideDown 0.4s ease-out;
 }
 </style>
 
 <script>
 // ========================================
-// GLOBAL VARIABLES
+// GLOBAL CART
 // ========================================
 let cart = [];
 
 console.log('🚀 Transaction page loaded');
 
 // ========================================
+// FORMAT RUPIAH
+// ========================================
+function formatRupiah(angka) {
+    return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
+}
+
+// ========================================
 // ADD PRODUCT TO CART
 // ========================================
 function addProductToCart(id, name, price, stock, button) {
-    console.log('🛒 Adding product:', {id, name, price, stock});
+    console.log('🛒 Adding:', {id, name, price, stock});
 
     const existingItem = cart.find(item => item.id === id);
 
@@ -335,13 +328,6 @@ function addProductToCart(id, name, price, stock, button) {
 }
 
 // ========================================
-// FORMAT RUPIAH
-// ========================================
-function formatRupiah(angka) {
-    return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
-}
-
-// ========================================
 // CALCULATE TOTAL
 // ========================================
 function calculateTotal() {
@@ -350,12 +336,12 @@ function calculateTotal() {
         total += item.price * item.quantity;
     });
 
-    // Update semua display total
+    // Update all total displays
     document.querySelectorAll('.total-amount').forEach(el => {
         el.textContent = formatRupiah(total);
     });
 
-    document.querySelectorAll('.total-amount-alert').forEach(el => {
+    document.querySelectorAll('.total-amount-info').forEach(el => {
         el.textContent = formatRupiah(total);
     });
 
@@ -366,7 +352,7 @@ function calculateTotal() {
 
     updateCartData();
 
-    console.log('💰 Total calculated:', total);
+    console.log('💰 Total:', total);
     return total;
 }
 
@@ -391,7 +377,7 @@ function renderCart() {
 
     if (cart.length === 0) {
         cartItems.innerHTML = `
-            <tr id="emptyCart">
+            <tr>
                 <td colspan="5" class="text-center text-muted py-4">
                     Keranjang masih kosong
                 </td>
@@ -465,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // JQUERY READY
 // ========================================
 $(document).ready(function() {
-    console.log('📄 jQuery ready');
+    console.log('📄 jQuery Ready');
 
     // SEARCH PRODUCT
     $('#searchProduct').on('keyup', function() {
@@ -475,7 +461,7 @@ $(document).ready(function() {
         });
     });
 
-    // FILTER BY CATEGORY
+    // CATEGORY FILTER
     $('#categoryFilter').on('change', function() {
         const categoryId = $(this).val();
         if (categoryId) {
@@ -487,39 +473,47 @@ $(document).ready(function() {
     });
 
     // ========================================
-    // APPLY PAYMENT - HITUNG KEMBALIAN
+    // HITUNG KEMBALIAN - FIX VERSION
     // ========================================
     $('#applyPayment').on('click', function() {
         console.log('💳 Hitung Kembalian clicked');
 
-        // Validasi keranjang
+        // Validasi cart
         if (cart.length === 0) {
             alert('Keranjang masih kosong! Silakan tambah produk terlebih dahulu.');
             return;
         }
 
-        if (!calculator) {
-            alert('Calculator belum siap!');
+        // Check calculator object
+        if (typeof calculator === 'undefined' || !calculator) {
+            alert('Calculator tidak ready! Refresh halaman dan coba lagi.');
+            console.error('❌ Calculator object not found');
             return;
         }
 
         const total = parseFloat($('#totalAmount').val());
         const payment = calculator.getValue();
 
-        console.log('💰 Calculation:', {total, payment});
+        console.log('💰 Calculation:', {
+            total: total,
+            payment: payment,
+            calculatorObject: calculator,
+            calculatorValue: calculator.currentValue
+        });
 
-        // Validasi pembayaran
-        if (payment <= 0) {
-            alert('Masukkan jumlah pembayaran terlebih dahulu!');
+        // Validasi payment
+        if (!payment || payment <= 0) {
+            alert('Masukkan jumlah pembayaran di kalkulator terlebih dahulu!');
             return;
         }
 
         if (payment < total) {
-            alert(`Jumlah pembayaran kurang!\nTotal: ${formatRupiah(total)}\nBayar: ${formatRupiah(payment)}\nKurang: ${formatRupiah(total - payment)}`);
+            const kurang = total - payment;
+            alert(`Pembayaran kurang!\n\n💰 Total Belanja: ${formatRupiah(total)}\n💵 Jumlah Bayar: ${formatRupiah(payment)}\n❌ Masih Kurang: ${formatRupiah(kurang)}`);
             return;
         }
 
-        // Hitung kembalian
+        // Calculate change
         const change = payment - total;
 
         // Set hidden fields
@@ -529,30 +523,34 @@ $(document).ready(function() {
         // Update cart data
         updateCartData();
 
-        // TAMPILKAN KEMBALIAN DENGAN ANIMASI
+        // TAMPILKAN KEMBALIAN
         $('#changeDisplayAmount').text(formatRupiah(change));
-        $('#changeDisplay').slideDown(300);
+        $('#changeDisplay').slideDown(400);
 
         // Enable submit button
         $('#submitPayment').prop('disabled', false);
 
-        // Scroll ke display kembalian
+        // Scroll to change display
         $('html, body').animate({
             scrollTop: $('#changeDisplay').offset().top - 100
         }, 500);
 
-        console.log('✅ Payment calculated:', {payment, change});
+        console.log('✅ Kembalian dihitung:', {
+            payment: payment,
+            change: change,
+            changeFormatted: formatRupiah(change)
+        });
     });
 
     // ========================================
-    // SUBMIT PAYMENT FORM
+    // FORM SUBMIT
     // ========================================
     $('#paymentForm').on('submit', function(e) {
         e.preventDefault();
 
         console.log('📤 Form submit');
 
-        // Validasi keranjang
+        // Validasi cart
         if (!cart || cart.length === 0) {
             alert('Keranjang masih kosong!');
             return false;
@@ -572,7 +570,7 @@ $(document).ready(function() {
             return false;
         }
 
-        // Update cart data sekali lagi
+        // Update cart data
         updateCartData();
 
         const cartDataValue = $('#cartData').val();
@@ -591,7 +589,7 @@ $(document).ready(function() {
         return true;
     });
 
-    // Customer name input focus/blur
+    // Customer name input handlers
     $('#customerNameInput').on('focus', function() {
         $(document).off('keydown.calculator');
     });
@@ -599,13 +597,15 @@ $(document).ready(function() {
     $('#customerNameInput').on('blur', function() {
         setTimeout(enableKeyboardCalculator, 100);
     });
+
+    console.log('✅ All event listeners attached');
 });
 
-// Enable keyboard calculator
+// Keyboard calculator support
 function enableKeyboardCalculator() {
     $(document).on('keydown.calculator', function(e) {
         if ($(e.target).is('input, textarea')) return;
-        if (!calculator) return;
+        if (typeof calculator === 'undefined') return;
 
         if (e.key >= '0' && e.key <= '9') calculator.appendNumber(e.key);
         if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculator.calculate(); }
@@ -619,7 +619,7 @@ if (typeof $ !== 'undefined') {
     enableKeyboardCalculator();
 }
 
-console.log('✅ Transaction script loaded');
+console.log('✅ Script loaded completely');
 </script>
 
 <?php include '../includes/footer.php'; ?>
