@@ -1,9 +1,10 @@
 <?php
-// kasir/transaction.php - SIMPLIFIED VERSION (NO EXTERNAL CALCULATOR.JS)
+// kasir/transaction.php - FIXED WITH CHANGE DISPLAY
 require_once '../config/config.php';
 requireRole('kasir');
 
 $pageTitle = 'Transaksi Baru';
+//$includeCalculator = true;
 
 $productClass = new Product();
 $products = $productClass->getAllProducts('available');
@@ -112,8 +113,8 @@ include '../includes/header.php';
                 </div>
                 <div class="card-footer bg-white">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Total Belanja:</h5>
-                        <h3 class="mb-0 fw-bold text-success" id="totalDisplay">Rp 0</h3>
+                        <h5 class="mb-0">Total:</h5>
+                        <h3 class="mb-0 fw-bold text-success total-amount">Rp 0</h3>
                     </div>
                 </div>
             </div>
@@ -149,67 +150,62 @@ include '../includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Total Info -->
+                        <!-- Total Belanja Display -->
                         <div class="alert alert-info mb-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold">💰 Total Belanja:</span>
-                                <span class="fs-5 fw-bold" id="totalInfoDisplay">Rp 0</span>
+                                <span class="fs-5 fw-bold total-amount-alert">Rp 0</span>
                             </div>
                         </div>
 
-                        <!-- Calculator Display -->
+                        <!-- Calculator -->
                         <div class="mb-3">
                             <label class="form-label fw-bold">Jumlah Bayar</label>
-                            <input type="text" 
-                                   id="paymentInput" 
-                                   class="form-control form-control-lg text-end fw-bold" 
-                                   style="font-size: 1.5rem;"
-                                   placeholder="Rp 0"
-                                   readonly>
+                            <div id="calculatorDisplay" class="calculator-display">Rp 0</div>
                         </div>
 
                         <!-- Calculator Buttons -->
                         <div class="row g-2 mb-3">
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="7">7</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="8">8</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="9">9</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-warning w-100 py-3" id="clearBtn">C</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="7">7</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="8">8</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="9">9</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-warning calculator-btn w-100" id="calcClear">C</button></div>
 
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="4">4</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="5">5</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="6">6</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="0">0</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="4">4</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="5">5</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="6">6</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="0">0</button></div>
 
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="1">1</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="2">2</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="3">3</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-secondary w-100 py-3 calc-btn" data-value="000">000</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="1">1</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="2">2</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="3">3</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-secondary calculator-btn w-100 calc-number" data-value="000">000</button></div>
                         </div>
 
-                        <!-- Quick Amount -->
+                        <!-- Quick Amount Buttons -->
                         <div class="row g-2 mb-3">
-                            <div class="col-3"><button type="button" class="btn btn-outline-info w-100 quick-btn" data-amount="10000">10k</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-info w-100 quick-btn" data-amount="20000">20k</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-info w-100 quick-btn" data-amount="50000">50k</button></div>
-                            <div class="col-3"><button type="button" class="btn btn-outline-info w-100 quick-btn" data-amount="100000">100k</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-info btn-sm w-100 quick-amount" data-amount="10000">10k</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-info btn-sm w-100 quick-amount" data-amount="20000">20k</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-info btn-sm w-100 quick-amount" data-amount="50000">50k</button></div>
+                            <div class="col-3"><button type="button" class="btn btn-outline-info btn-sm w-100 quick-amount" data-amount="100000">100k</button></div>
                         </div>
 
-                        <button type="button" class="btn btn-primary btn-lg w-100 mb-3" id="calculateBtn">
+                        <button type="button" class="btn btn-primary w-100 mb-2" id="applyPayment">
                             <i class="bi bi-calculator me-2"></i>Hitung Kembalian
                         </button>
 
-                        <!-- Change Display -->
-                        <div id="changeBox" class="alert alert-success border-2 border-success" style="display: none;">
-                            <div class="text-center py-3">
+                        <!-- KEMBALIAN DISPLAY - LEBIH BESAR & JELAS -->
+                        <div id="changeDisplay" class="alert alert-success border-success" style="display: none;">
+                            <div class="text-center py-2">
                                 <div class="mb-2">
-                                    <i class="bi bi-cash-stack" style="font-size: 3rem; color: #198754;"></i>
+                                    <i class="bi bi-cash-stack fs-3 text-success"></i>
                                 </div>
-                                <h5 class="fw-bold text-success mb-2">KEMBALIAN</h5>
-                                <h1 class="fw-bold text-success mb-0" id="changeText">Rp 0</h1>
+                                <h6 class="mb-2 fw-bold text-success">KEMBALIAN</h6>
+                                <h2 class="mb-0 fw-bold text-success" id="changeDisplayAmount">Rp 0</h2>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success btn-lg w-100" id="submitBtn" disabled>
+                        <button type="submit" class="btn btn-success btn-lg w-100" id="submitPayment" disabled>
                             <i class="bi bi-check-circle me-2"></i>Proses Pembayaran
                         </button>
                     </form>
@@ -220,43 +216,92 @@ include '../includes/header.php';
 </div>
 
 <style>
+/* Calculator Display */
+.calculator-display {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: right;
+    color: #495057;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Calculator Buttons */
+.calculator-btn {
+    height: 60px;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Hover effect untuk card produk */
 .product-item .card:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+/* Button add to cart effect */
+.add-to-cart-btn {
+    transition: all 0.2s;
 }
 
 .add-to-cart-btn:hover {
     transform: scale(1.05);
 }
 
+.add-to-cart-btn:active {
+    transform: scale(0.95);
+}
+
+/* Animation saat item ditambah */
 @keyframes pulse {
-    0%, 100% { transform: scale(1); }
+    0% { transform: scale(1); }
     50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 .btn-added {
     animation: pulse 0.3s ease;
 }
+
+/* Change Display Animation */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#changeDisplay {
+    animation: slideDown 0.3s ease;
+}
 </style>
 
 <script>
-console.log('=== SCRIPT START ===');
-
-// GLOBAL CART
+// ========================================
+// GLOBAL VARIABLES
+// ========================================
 let cart = [];
-let paymentValue = 0;
 
-// FORMAT RUPIAH
-function formatRupiah(number) {
-    return 'Rp ' + parseInt(number).toLocaleString('id-ID');
-}
+console.log('🚀 Transaction page loaded');
 
-// ADD TO CART
+// ========================================
+// ADD PRODUCT TO CART
+// ========================================
 function addProductToCart(id, name, price, stock, button) {
-    console.log('ADD TO CART:', {id, name, price, stock});
-    
-    let existingItem = cart.find(item => item.id === id);
-    
+    console.log('🛒 Adding product:', {id, name, price, stock});
+
+    const existingItem = cart.find(item => item.id === id);
+
     if (existingItem) {
         if (existingItem.quantity < stock) {
             existingItem.quantity++;
@@ -273,23 +318,118 @@ function addProductToCart(id, name, price, stock, button) {
             stock: stock
         });
     }
-    
-    // Button feedback
+
+    // Visual feedback
     if (button) {
-        let originalHTML = button.innerHTML;
-        button.innerHTML = '<i class="bi bi-check-circle"></i> Ditambah!';
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ditambah!';
         button.classList.add('btn-added');
-        
+
         setTimeout(() => {
             button.innerHTML = originalHTML;
             button.classList.remove('btn-added');
         }, 500);
     }
-    
+
     renderCart();
 }
 
-// DECREASE QTY
+// ========================================
+// FORMAT RUPIAH
+// ========================================
+function formatRupiah(angka) {
+    return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
+}
+
+// ========================================
+// CALCULATE TOTAL
+// ========================================
+function calculateTotal() {
+    let total = 0;
+    cart.forEach(item => {
+        total += item.price * item.quantity;
+    });
+
+    // Update semua display total
+    document.querySelectorAll('.total-amount').forEach(el => {
+        el.textContent = formatRupiah(total);
+    });
+
+    document.querySelectorAll('.total-amount-alert').forEach(el => {
+        el.textContent = formatRupiah(total);
+    });
+
+    const totalAmountInput = document.getElementById('totalAmount');
+    if (totalAmountInput) {
+        totalAmountInput.value = total;
+    }
+
+    updateCartData();
+
+    console.log('💰 Total calculated:', total);
+    return total;
+}
+
+// ========================================
+// UPDATE CART DATA
+// ========================================
+function updateCartData() {
+    const cartDataField = document.getElementById('cartData');
+    if (cartDataField) {
+        cartDataField.value = JSON.stringify(cart);
+    }
+}
+
+// ========================================
+// RENDER CART
+// ========================================
+function renderCart() {
+    const cartItems = document.getElementById('cartItems');
+    if (!cartItems) return;
+
+    cartItems.innerHTML = '';
+
+    if (cart.length === 0) {
+        cartItems.innerHTML = `
+            <tr id="emptyCart">
+                <td colspan="5" class="text-center text-muted py-4">
+                    Keranjang masih kosong
+                </td>
+            </tr>
+        `;
+        calculateTotal();
+        return;
+    }
+
+    cart.forEach((item, index) => {
+        const subtotal = item.price * item.quantity;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td class="text-center">
+                <div class="input-group input-group-sm" style="width: 120px; margin: 0 auto;">
+                    <button class="btn btn-outline-secondary" onclick="decreaseQty(${index})" type="button">-</button>
+                    <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
+                    <button class="btn btn-outline-secondary" onclick="increaseQty(${index})" type="button">+</button>
+                </div>
+            </td>
+            <td class="text-end">${formatRupiah(item.price)}</td>
+            <td class="text-end">${formatRupiah(subtotal)}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="removeItem(${index})" type="button">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        cartItems.appendChild(row);
+    });
+
+    calculateTotal();
+}
+
+// ========================================
+// CART ACTIONS
+// ========================================
 function decreaseQty(index) {
     if (cart[index].quantity > 1) {
         cart[index].quantity--;
@@ -297,7 +437,6 @@ function decreaseQty(index) {
     }
 }
 
-// INCREASE QTY
 function increaseQty(index) {
     if (cart[index].quantity < cart[index].stock) {
         cart[index].quantity++;
@@ -307,7 +446,6 @@ function increaseQty(index) {
     }
 }
 
-// REMOVE ITEM
 function removeItem(index) {
     if (confirm('Hapus item dari keranjang?')) {
         cart.splice(index, 1);
@@ -315,208 +453,173 @@ function removeItem(index) {
     }
 }
 
-// RENDER CART
-function renderCart() {
-    console.log('RENDER CART, items:', cart.length);
-    
-    let tbody = document.getElementById('cartItems');
-    tbody.innerHTML = '';
-    
-    if (cart.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Keranjang masih kosong</td></tr>';
-        updateTotal(0);
-        return;
-    }
-    
-    let total = 0;
-    
-    cart.forEach((item, index) => {
-        let subtotal = item.price * item.quantity;
-        total += subtotal;
-        
-        let row = `
-            <tr>
-                <td>${item.name}</td>
-                <td class="text-center">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" onclick="decreaseQty(${index})" type="button">-</button>
-                        <span class="btn btn-outline-secondary disabled">${item.quantity}</span>
-                        <button class="btn btn-outline-secondary" onclick="increaseQty(${index})" type="button">+</button>
-                    </div>
-                </td>
-                <td class="text-end">${formatRupiah(item.price)}</td>
-                <td class="text-end">${formatRupiah(subtotal)}</td>
-                <td>
-                    <button class="btn btn-sm btn-danger" onclick="removeItem(${index})" type="button">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-        tbody.innerHTML += row;
-    });
-    
-    updateTotal(total);
-    updateCartData();
-}
-
-// UPDATE TOTAL
-function updateTotal(total) {
-    console.log('UPDATE TOTAL:', total);
-    
-    document.getElementById('totalDisplay').textContent = formatRupiah(total);
-    document.getElementById('totalInfoDisplay').textContent = formatRupiah(total);
-    document.getElementById('totalAmount').value = total;
-}
-
-// UPDATE CART DATA
-function updateCartData() {
-    document.getElementById('cartData').value = JSON.stringify(cart);
-}
-
-// CALCULATOR FUNCTIONS
-function updatePaymentDisplay() {
-    document.getElementById('paymentInput').value = formatRupiah(paymentValue);
-}
-
+// ========================================
+// DOCUMENT READY
+// ========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM LOADED');
-    
-    // Calculator number buttons
-    document.querySelectorAll('.calc-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            let value = this.getAttribute('data-value');
-            
-            if (paymentValue === 0) {
-                paymentValue = parseInt(value);
-            } else {
-                paymentValue = parseInt(paymentValue.toString() + value);
-            }
-            
-            updatePaymentDisplay();
+    console.log('📄 DOM Ready');
+    renderCart();
+});
+
+// ========================================
+// JQUERY READY
+// ========================================
+$(document).ready(function() {
+    console.log('📄 jQuery ready');
+
+    // SEARCH PRODUCT
+    $('#searchProduct').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        $('.product-item').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
         });
     });
-    
-    // Clear button
-    document.getElementById('clearBtn').addEventListener('click', function() {
-        paymentValue = 0;
-        updatePaymentDisplay();
-        document.getElementById('changeBox').style.display = 'none';
-        document.getElementById('submitBtn').disabled = true;
+
+    // FILTER BY CATEGORY
+    $('#categoryFilter').on('change', function() {
+        const categoryId = $(this).val();
+        if (categoryId) {
+            $('.product-item').hide();
+            $(`.product-item[data-category="${categoryId}"]`).show();
+        } else {
+            $('.product-item').show();
+        }
     });
-    
-    // Quick amount buttons
-    document.querySelectorAll('.quick-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            paymentValue = parseInt(this.getAttribute('data-amount'));
-            updatePaymentDisplay();
-        });
-    });
-    
-    // Calculate button
-    document.getElementById('calculateBtn').addEventListener('click', function() {
-        console.log('CALCULATE CLICKED');
-        
+
+    // ========================================
+    // APPLY PAYMENT - HITUNG KEMBALIAN
+    // ========================================
+    $('#applyPayment').on('click', function() {
+        console.log('💳 Hitung Kembalian clicked');
+
+        // Validasi keranjang
         if (cart.length === 0) {
-            alert('Keranjang masih kosong!');
+            alert('Keranjang masih kosong! Silakan tambah produk terlebih dahulu.');
             return;
         }
-        
-        let total = parseInt(document.getElementById('totalAmount').value);
-        
-        if (paymentValue === 0) {
-            alert('Masukkan jumlah pembayaran!');
+
+        if (!calculator) {
+            alert('Calculator belum siap!');
             return;
         }
-        
-        if (paymentValue < total) {
-            alert(`Pembayaran kurang!\n\nTotal: ${formatRupiah(total)}\nBayar: ${formatRupiah(paymentValue)}\nKurang: ${formatRupiah(total - paymentValue)}`);
+
+        const total = parseFloat($('#totalAmount').val());
+        const payment = calculator.getValue();
+
+        console.log('💰 Calculation:', {total, payment});
+
+        // Validasi pembayaran
+        if (payment <= 0) {
+            alert('Masukkan jumlah pembayaran terlebih dahulu!');
             return;
         }
-        
-        let change = paymentValue - total;
-        
+
+        if (payment < total) {
+            alert(`Jumlah pembayaran kurang!\nTotal: ${formatRupiah(total)}\nBayar: ${formatRupiah(payment)}\nKurang: ${formatRupiah(total - payment)}`);
+            return;
+        }
+
+        // Hitung kembalian
+        const change = payment - total;
+
         // Set hidden fields
-        document.getElementById('paymentAmount').value = paymentValue;
-        document.getElementById('changeAmount').value = change;
-        
-        // Show change
-        document.getElementById('changeText').textContent = formatRupiah(change);
-        document.getElementById('changeBox').style.display = 'block';
-        
-        // Enable submit
-        document.getElementById('submitBtn').disabled = false;
-        
-        // Scroll to change
-        document.getElementById('changeBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        console.log('CHANGE CALCULATED:', change);
+        $('#paymentAmount').val(payment);
+        $('#changeAmount').val(change);
+
+        // Update cart data
+        updateCartData();
+
+        // TAMPILKAN KEMBALIAN DENGAN ANIMASI
+        $('#changeDisplayAmount').text(formatRupiah(change));
+        $('#changeDisplay').slideDown(300);
+
+        // Enable submit button
+        $('#submitPayment').prop('disabled', false);
+
+        // Scroll ke display kembalian
+        $('html, body').animate({
+            scrollTop: $('#changeDisplay').offset().top - 100
+        }, 500);
+
+        console.log('✅ Payment calculated:', {payment, change});
     });
-    
-    // Form submit
-    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+
+    // ========================================
+    // SUBMIT PAYMENT FORM
+    // ========================================
+    $('#paymentForm').on('submit', function(e) {
         e.preventDefault();
-        
-        console.log('FORM SUBMIT');
-        
-        if (cart.length === 0) {
-            alert('Keranjang kosong!');
+
+        console.log('📤 Form submit');
+
+        // Validasi keranjang
+        if (!cart || cart.length === 0) {
+            alert('Keranjang masih kosong!');
             return false;
         }
-        
-        let payment = parseInt(document.getElementById('paymentAmount').value);
-        let total = parseInt(document.getElementById('totalAmount').value);
-        
-        if (!payment || payment < total) {
+
+        // Validasi payment
+        const paymentAmount = parseFloat($('#paymentAmount').val());
+        const totalAmount = parseFloat($('#totalAmount').val());
+
+        if (!paymentAmount || paymentAmount <= 0) {
             alert('Silakan hitung kembalian terlebih dahulu!');
             return false;
         }
-        
-        updateCartData();
-        
-        let cartData = document.getElementById('cartData').value;
-        if (!cartData || cartData === '[]') {
-            alert('Error: Cart data kosong!');
+
+        if (paymentAmount < totalAmount) {
+            alert('Jumlah pembayaran kurang dari total!');
             return false;
         }
-        
-        // Disable submit button
-        document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
-        
-        console.log('SUBMITTING...');
+
+        // Update cart data sekali lagi
+        updateCartData();
+
+        const cartDataValue = $('#cartData').val();
+        if (!cartDataValue || cartDataValue === '' || cartDataValue === '[]') {
+            alert('Error: Data keranjang kosong!');
+            return false;
+        }
+
+        // Disable button
+        $('#submitPayment').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
+
+        console.log('✅ Form validated, submitting...');
+
+        // Submit
         this.submit();
+        return true;
     });
-    
-    // Search
-    if (document.getElementById('searchProduct')) {
-        document.getElementById('searchProduct').addEventListener('keyup', function() {
-            let value = this.value.toLowerCase();
-            document.querySelectorAll('.product-item').forEach(item => {
-                let text = item.textContent.toLowerCase();
-                item.style.display = text.includes(value) ? '' : 'none';
-            });
-        });
-    }
-    
-    // Category filter
-    if (document.getElementById('categoryFilter')) {
-        document.getElementById('categoryFilter').addEventListener('change', function() {
-            let categoryId = this.value;
-            document.querySelectorAll('.product-item').forEach(item => {
-                if (!categoryId) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = item.getAttribute('data-category') === categoryId ? '' : 'none';
-                }
-            });
-        });
-    }
-    
-    console.log('ALL EVENTS ATTACHED');
+
+    // Customer name input focus/blur
+    $('#customerNameInput').on('focus', function() {
+        $(document).off('keydown.calculator');
+    });
+
+    $('#customerNameInput').on('blur', function() {
+        setTimeout(enableKeyboardCalculator, 100);
+    });
 });
 
-console.log('=== SCRIPT END ===');
+// Enable keyboard calculator
+function enableKeyboardCalculator() {
+    $(document).on('keydown.calculator', function(e) {
+        if ($(e.target).is('input, textarea')) return;
+        if (!calculator) return;
+
+        if (e.key >= '0' && e.key <= '9') calculator.appendNumber(e.key);
+        if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculator.calculate(); }
+        if (e.key === 'Backspace') { e.preventDefault(); calculator.delete(); }
+        if (e.key === 'Escape') calculator.clear();
+        if (e.key === '.' || e.key === ',') calculator.appendNumber('.');
+    });
+}
+
+if (typeof $ !== 'undefined') {
+    enableKeyboardCalculator();
+}
+
+console.log('✅ Transaction script loaded');
 </script>
 
 <?php include '../includes/footer.php'; ?>
