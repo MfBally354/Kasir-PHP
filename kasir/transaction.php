@@ -607,10 +607,25 @@ $(document).ready(function() {
         updateCartData();
         console.log('  Cart data updated');
 
-        // Step 8: UPDATE KEMBALIAN BOX
+        // Step 8: UPDATE KEMBALIAN BOX - DIRECT UPDATE
         console.log('STEP 8: Update kembalian box');
-        console.log('  Calling updateKembalianBox with:', kembalian);
-        updateKembalianBox(kembalian);
+        console.log('  Kembalian value:', kembalian);
+        
+        // DIRECT UPDATE - Tidak pakai function
+        const kembalianBox = document.getElementById('kembalianBox');
+        if (kembalianBox) {
+            kembalianBox.textContent = formatRupiah(kembalian);
+            console.log('  ✅ Kembalian box updated to:', formatRupiah(kembalian));
+            
+            // Highlight effect
+            const card = kembalianBox.closest('.card');
+            if (card) {
+                card.classList.add('kembalian-updated');
+                setTimeout(() => card.classList.remove('kembalian-updated'), 600);
+            }
+        } else {
+            console.error('  ❌ kembalianBox element NOT FOUND!');
+        }
 
         // Step 9: Enable submit
         console.log('STEP 9: Enable submit button');
