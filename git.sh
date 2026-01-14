@@ -1,13 +1,15 @@
 #!/bin/bash
+set -e
 
-echo "Menambahkan git add .";
+echo "Menambahkan perubahan..."
 git add .
 
-echo "Mengcommit!!!";
-git commit -m "Debug"
+echo "Melakukan commit..."
+git commit -m "Debug perubahan terbaru"
 
-echo "Mengpush hasil";
+echo "Push ke repository..."
 git push
 
-echo "Status git";
+echo "Status repository:"
 git status
+
