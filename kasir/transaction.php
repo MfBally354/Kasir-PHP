@@ -1,5 +1,5 @@
 <?php
-// kasir/transaction.php - DENGAN KOTAK KEMBALIAN PERMANEN
+// kasir/transaction.php - DEBUG VERSION
 require_once '../config/config.php';
 requireRole('kasir');
 
@@ -209,6 +209,12 @@ include '../includes/header.php';
                             </div>
                         </div>
 
+                        <!-- DEBUG INFO -->
+                        <div class="alert alert-warning mb-3" id="debugInfo" style="display: none;">
+                            <small><strong>🐛 DEBUG INFO:</strong></small><br>
+                            <small id="debugText"></small>
+                        </div>
+
                         <button type="button" class="btn btn-primary btn-lg w-100 mb-2" id="applyPayment">
                             <i class="bi bi-calculator me-2"></i>Hitung Kembalian
                         </button>
@@ -260,7 +266,6 @@ include '../includes/header.php';
     animation: pulse 0.3s ease;
 }
 
-/* Highlight kembalian saat berubah */
 @keyframes highlight {
     0% { background-color: rgba(25, 135, 84, 0.1); }
     50% { background-color: rgba(25, 135, 84, 0.3); }
@@ -279,12 +284,26 @@ include '../includes/header.php';
 let cart = [];
 
 console.log('🚀 Transaction page loaded');
+console.log('📍 Script version: DEBUG v1.0');
 
 // ========================================
 // FORMAT RUPIAH
 // ========================================
 function formatRupiah(angka) {
     return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
+}
+
+// ========================================
+// SHOW DEBUG INFO
+// ========================================
+function showDebug(message) {
+    const debugInfo = document.getElementById('debugInfo');
+    const debugText = document.getElementById('debugText');
+    if (debugInfo && debugText) {
+        debugText.innerHTML = message;
+        debugInfo.style.display = 'block';
+        console.log('🐛 DEBUG:', message);
+    }
 }
 
 // ========================================
@@ -312,7 +331,6 @@ function addProductToCart(id, name, price, stock, button) {
         });
     }
 
-    // Visual feedback
     if (button) {
         const originalHTML = button.innerHTML;
         button.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ditambah!';
@@ -336,12 +354,10 @@ function calculateTotal() {
         total += item.price * item.quantity;
     });
 
-    // Update semua display total
     document.querySelectorAll('.total-amount').forEach(el => {
         el.textContent = formatRupiah(total);
     });
 
-    // Update kotak total belanja
     document.querySelectorAll('.total-belanja-box').forEach(el => {
         el.textContent = formatRupiah(total);
     });
@@ -353,7 +369,7 @@ function calculateTotal() {
 
     updateCartData();
 
-    console.log('💰 Total:', total);
+    console.log('💰 Total calculated:', total);
     return total;
 }
 
@@ -361,16 +377,31 @@ function calculateTotal() {
 // UPDATE KEMBALIAN BOX
 // ========================================
 function updateKembalianBox(kembalian) {
+    console.log('💵 Updating kembalian box:', kembalian);
+    
     const kembalianBox = document.getElementById('kembalianBox');
-    if (kembalianBox) {
-        kembalianBox.textContent = formatRupiah(kembalian);
-        
-        // Highlight effect
-        kembalianBox.parentElement.parentElement.parentElement.classList.add('kembalian-updated');
+    
+    if (!kembalianBox) {
+        console.error('❌ kembalianBox element NOT FOUND!');
+        showDebug('ERROR: kembalianBox element tidak ditemukan!');
+        return;
+    }
+    
+    console.log('✅ kembalianBox element found');
+    
+    kembalianBox.textContent = formatRupiah(kembalian);
+    console.log('✅ Text updated to:', formatRupiah(kembalian));
+    
+    // Highlight effect
+    const card = kembalianBox.closest('.card');
+    if (card) {
+        card.classList.add('kembalian-updated');
         setTimeout(() => {
-            kembalianBox.parentElement.parentElement.parentElement.classList.remove('kembalian-updated');
+            card.classList.remove('kembalian-updated');
         }, 600);
     }
+    
+    showDebug(`Kembalian berhasil diupdate: ${formatRupiah(kembalian)}`);
 }
 
 // ========================================
@@ -469,6 +500,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========================================
 $(document).ready(function() {
     console.log('📄 jQuery Ready');
+    console.log('🔍 Checking elements...');
+    console.log('  - applyPayment button:', $('#applyPayment').length > 0 ? 'FOUND' : 'NOT FOUND');
+    console.log('  - kembalianBox element:', $('#kembalianBox').length > 0 ? 'FOUND' : 'NOT FOUND');
+    console.log('  - calculator object:', typeof calculator !== 'undefined' ? 'EXISTS' : 'NOT FOUND');
 
     // SEARCH PRODUCT
     $('#searchProduct').on('keyup', function() {
@@ -490,64 +525,105 @@ $(document).ready(function() {
     });
 
     // ========================================
-    // HITUNG KEMBALIAN - UPDATE KOTAK
+    // HITUNG KEMBALIAN - ULTRA DEBUG VERSION
     // ========================================
     $('#applyPayment').on('click', function() {
-        console.log('💳 Hitung Kembalian clicked');
+        console.log('');
+        console.log('═══════════════════════════════════════');
+        console.log('💳 HITUNG KEMBALIAN CLICKED');
+        console.log('═══════════════════════════════════════');
 
-        // Validasi cart
+        // Step 1: Validasi cart
+        console.log('STEP 1: Validasi cart');
+        console.log('  Cart length:', cart.length);
+        console.log('  Cart data:', cart);
+        
         if (cart.length === 0) {
-            alert('Keranjang masih kosong! Silakan tambah produk terlebih dahulu.');
+            console.error('  ❌ Cart kosong!');
+            alert('Keranjang masih kosong!');
             return;
         }
+        console.log('  ✅ Cart OK');
 
-        // Check calculator
+        // Step 2: Check calculator
+        console.log('STEP 2: Check calculator');
+        console.log('  typeof calculator:', typeof calculator);
+        console.log('  calculator object:', calculator);
+        
         if (typeof calculator === 'undefined' || !calculator) {
+            console.error('  ❌ Calculator NOT FOUND!');
             alert('Calculator tidak ready! Refresh halaman.');
-            console.error('❌ Calculator not found');
+            showDebug('ERROR: Calculator object tidak ditemukan!');
             return;
         }
+        console.log('  ✅ Calculator OK');
 
+        // Step 3: Get values
+        console.log('STEP 3: Get values');
         const total = parseFloat($('#totalAmount').val());
+        console.log('  Total amount:', total);
+        console.log('  Calculator currentValue:', calculator.currentValue);
+        
         const payment = calculator.getValue();
+        console.log('  Payment (from getValue()):', payment);
 
-        console.log('💰 Data:', {
-            total: total,
-            payment: payment
-        });
-
-        // Validasi payment
+        // Step 4: Validasi payment
+        console.log('STEP 4: Validasi payment');
         if (!payment || payment <= 0) {
+            console.error('  ❌ Payment invalid:', payment);
             alert('Masukkan jumlah pembayaran di kalkulator!');
+            showDebug(`ERROR: Payment = ${payment} (invalid)`);
             return;
         }
+        console.log('  ✅ Payment valid');
 
         if (payment < total) {
             const kurang = total - payment;
+            console.warn('  ⚠️  Payment kurang!');
+            console.log('  Total:', total);
+            console.log('  Payment:', payment);
+            console.log('  Kurang:', kurang);
             alert(`Pembayaran kurang!\n\nTotal: ${formatRupiah(total)}\nBayar: ${formatRupiah(payment)}\nKurang: ${formatRupiah(kurang)}`);
+            showDebug(`Payment kurang! Total: ${formatRupiah(total)}, Bayar: ${formatRupiah(payment)}`);
             return;
         }
+        console.log('  ✅ Payment cukup');
 
-        // Calculate kembalian
+        // Step 5: Calculate kembalian
+        console.log('STEP 5: Calculate kembalian');
         const kembalian = payment - total;
+        console.log('  Kembalian =', payment, '-', total, '=', kembalian);
+        console.log('  Kembalian formatted:', formatRupiah(kembalian));
 
-        // Set hidden fields
+        // Step 6: Set hidden fields
+        console.log('STEP 6: Set hidden fields');
         $('#paymentAmount').val(payment);
         $('#changeAmount').val(kembalian);
+        console.log('  paymentAmount set to:', payment);
+        console.log('  changeAmount set to:', kembalian);
 
-        // Update cart data
+        // Step 7: Update cart data
+        console.log('STEP 7: Update cart data');
         updateCartData();
+        console.log('  Cart data updated');
 
-        // UPDATE KOTAK KEMBALIAN
+        // Step 8: UPDATE KEMBALIAN BOX
+        console.log('STEP 8: Update kembalian box');
+        console.log('  Calling updateKembalianBox with:', kembalian);
         updateKembalianBox(kembalian);
 
-        // Enable submit button
+        // Step 9: Enable submit
+        console.log('STEP 9: Enable submit button');
         $('#submitPayment').prop('disabled', false);
+        console.log('  Submit button enabled');
 
-        console.log('✅ Kembalian:', kembalian);
+        console.log('═══════════════════════════════════════');
+        console.log('✅ HITUNG KEMBALIAN SELESAI');
+        console.log('═══════════════════════════════════════');
+        console.log('');
 
-        // Alert sukses
-        alert(`✅ Kembalian berhasil dihitung!\n\nJumlah Bayar: ${formatRupiah(payment)}\nKembalian: ${formatRupiah(kembalian)}`);
+        // Alert
+        alert(`✅ Kembalian: ${formatRupiah(kembalian)}\n\nCek kotak hijau di bawah kalkulator!`);
     });
 
     // ========================================
@@ -556,15 +632,11 @@ $(document).ready(function() {
     $('#paymentForm').on('submit', function(e) {
         e.preventDefault();
 
-        console.log('📤 Form submit');
-
-        // Validasi cart
         if (!cart || cart.length === 0) {
             alert('Keranjang masih kosong!');
             return false;
         }
 
-        // Validasi payment
         const paymentAmount = parseFloat($('#paymentAmount').val());
         const totalAmount = parseFloat($('#totalAmount').val());
 
@@ -578,7 +650,6 @@ $(document).ready(function() {
             return false;
         }
 
-        // Update cart data
         updateCartData();
 
         const cartDataValue = $('#cartData').val();
@@ -587,17 +658,12 @@ $(document).ready(function() {
             return false;
         }
 
-        // Disable button
         $('#submitPayment').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
 
-        console.log('✅ Submitting...');
-
-        // Submit
         this.submit();
         return true;
     });
 
-    // Customer name input
     $('#customerNameInput').on('focus', function() {
         $(document).off('keydown.calculator');
     });
@@ -606,10 +672,9 @@ $(document).ready(function() {
         setTimeout(enableKeyboardCalculator, 100);
     });
 
-    console.log('✅ All events attached');
+    console.log('✅ All event listeners attached');
 });
 
-// Keyboard calculator
 function enableKeyboardCalculator() {
     $(document).on('keydown.calculator', function(e) {
         if ($(e.target).is('input, textarea')) return;
@@ -627,7 +692,7 @@ if (typeof $ !== 'undefined') {
     enableKeyboardCalculator();
 }
 
-console.log('✅ Script loaded');
+console.log('✅ Script loaded - DEBUG MODE');
 </script>
 
 <?php include '../includes/footer.php'; ?>
