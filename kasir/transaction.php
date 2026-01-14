@@ -1,10 +1,10 @@
 <?php
-// kasir/transaction.php - HYBRID VERSION (pakai calculator.js + fix display)
+// kasir/transaction.php - DENGAN KOTAK KEMBALIAN PERMANEN
 require_once '../config/config.php';
 requireRole('kasir');
 
 $pageTitle = 'Transaksi Baru';
-$includeCalculator = true; // TETAP PAKAI calculator.js
+$includeCalculator = true;
 
 $productClass = new Product();
 $products = $productClass->getAllProducts('available');
@@ -150,14 +150,6 @@ include '../includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Total Belanja Display -->
-                        <div class="alert alert-info mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold">💰 Total Belanja:</span>
-                                <span class="fs-5 fw-bold total-amount-info">Rp 0</span>
-                            </div>
-                        </div>
-
                         <!-- Calculator Display -->
                         <div class="mb-3">
                             <label class="form-label fw-bold">Jumlah Bayar</label>
@@ -190,20 +182,36 @@ include '../includes/header.php';
                             <div class="col-3"><button type="button" class="btn btn-outline-info btn-sm w-100 quick-amount" data-amount="100000">100k</button></div>
                         </div>
 
-                        <button type="button" class="btn btn-primary w-100 mb-3" id="applyPayment">
-                            <i class="bi bi-calculator me-2"></i>Hitung Kembalian
-                        </button>
-
-                        <!-- KEMBALIAN DISPLAY - BESAR & JELAS -->
-                        <div id="changeDisplay" class="alert alert-success border-2 border-success" style="display: none;">
-                            <div class="text-center py-3">
-                                <div class="mb-2">
-                                    <i class="bi bi-cash-stack" style="font-size: 3rem; color: #198754;"></i>
+                        <!-- INFO BOXES - SELALU TAMPIL -->
+                        <div class="row g-2 mb-3">
+                            <!-- Total Belanja -->
+                            <div class="col-md-6">
+                                <div class="card bg-info bg-opacity-10 border-info">
+                                    <div class="card-body p-3">
+                                        <div class="text-center">
+                                            <small class="text-muted d-block mb-1">💰 Total Belanja</small>
+                                            <h4 class="mb-0 fw-bold text-info total-belanja-box">Rp 0</h4>
+                                        </div>
+                                    </div>
                                 </div>
-                                <h5 class="fw-bold text-success mb-2">💵 KEMBALIAN</h5>
-                                <h1 class="fw-bold text-success mb-0" id="changeDisplayAmount" style="font-size: 2.5rem;">Rp 0</h1>
+                            </div>
+
+                            <!-- Kembalian -->
+                            <div class="col-md-6">
+                                <div class="card bg-success bg-opacity-10 border-success">
+                                    <div class="card-body p-3">
+                                        <div class="text-center">
+                                            <small class="text-muted d-block mb-1">💵 Kembalian</small>
+                                            <h4 class="mb-0 fw-bold text-success" id="kembalianBox">Rp 0</h4>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <button type="button" class="btn btn-primary btn-lg w-100 mb-2" id="applyPayment">
+                            <i class="bi bi-calculator me-2"></i>Hitung Kembalian
+                        </button>
 
                         <button type="submit" class="btn btn-success btn-lg w-100" id="submitPayment" disabled>
                             <i class="bi bi-check-circle me-2"></i>Proses Pembayaran
@@ -239,10 +247,6 @@ include '../includes/header.php';
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
-.add-to-cart-btn {
-    transition: all 0.2s;
-}
-
 .add-to-cart-btn:hover {
     transform: scale(1.05);
 }
@@ -256,19 +260,15 @@ include '../includes/header.php';
     animation: pulse 0.3s ease;
 }
 
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Highlight kembalian saat berubah */
+@keyframes highlight {
+    0% { background-color: rgba(25, 135, 84, 0.1); }
+    50% { background-color: rgba(25, 135, 84, 0.3); }
+    100% { background-color: rgba(25, 135, 84, 0.1); }
 }
 
-#changeDisplay {
-    animation: slideDown 0.4s ease-out;
+.kembalian-updated {
+    animation: highlight 0.6s ease;
 }
 </style>
 
@@ -336,12 +336,13 @@ function calculateTotal() {
         total += item.price * item.quantity;
     });
 
-    // Update all total displays
+    // Update semua display total
     document.querySelectorAll('.total-amount').forEach(el => {
         el.textContent = formatRupiah(total);
     });
 
-    document.querySelectorAll('.total-amount-info').forEach(el => {
+    // Update kotak total belanja
+    document.querySelectorAll('.total-belanja-box').forEach(el => {
         el.textContent = formatRupiah(total);
     });
 
@@ -354,6 +355,22 @@ function calculateTotal() {
 
     console.log('💰 Total:', total);
     return total;
+}
+
+// ========================================
+// UPDATE KEMBALIAN BOX
+// ========================================
+function updateKembalianBox(kembalian) {
+    const kembalianBox = document.getElementById('kembalianBox');
+    if (kembalianBox) {
+        kembalianBox.textContent = formatRupiah(kembalian);
+        
+        // Highlight effect
+        kembalianBox.parentElement.parentElement.parentElement.classList.add('kembalian-updated');
+        setTimeout(() => {
+            kembalianBox.parentElement.parentElement.parentElement.classList.remove('kembalian-updated');
+        }, 600);
+    }
 }
 
 // ========================================
@@ -473,7 +490,7 @@ $(document).ready(function() {
     });
 
     // ========================================
-    // HITUNG KEMBALIAN - FIX VERSION
+    // HITUNG KEMBALIAN - UPDATE KOTAK
     // ========================================
     $('#applyPayment').on('click', function() {
         console.log('💳 Hitung Kembalian clicked');
@@ -484,62 +501,53 @@ $(document).ready(function() {
             return;
         }
 
-        // Check calculator object
+        // Check calculator
         if (typeof calculator === 'undefined' || !calculator) {
-            alert('Calculator tidak ready! Refresh halaman dan coba lagi.');
-            console.error('❌ Calculator object not found');
+            alert('Calculator tidak ready! Refresh halaman.');
+            console.error('❌ Calculator not found');
             return;
         }
 
         const total = parseFloat($('#totalAmount').val());
         const payment = calculator.getValue();
 
-        console.log('💰 Calculation:', {
+        console.log('💰 Data:', {
             total: total,
-            payment: payment,
-            calculatorObject: calculator,
-            calculatorValue: calculator.currentValue
+            payment: payment
         });
 
         // Validasi payment
         if (!payment || payment <= 0) {
-            alert('Masukkan jumlah pembayaran di kalkulator terlebih dahulu!');
+            alert('Masukkan jumlah pembayaran di kalkulator!');
             return;
         }
 
         if (payment < total) {
             const kurang = total - payment;
-            alert(`Pembayaran kurang!\n\n💰 Total Belanja: ${formatRupiah(total)}\n💵 Jumlah Bayar: ${formatRupiah(payment)}\n❌ Masih Kurang: ${formatRupiah(kurang)}`);
+            alert(`Pembayaran kurang!\n\nTotal: ${formatRupiah(total)}\nBayar: ${formatRupiah(payment)}\nKurang: ${formatRupiah(kurang)}`);
             return;
         }
 
-        // Calculate change
-        const change = payment - total;
+        // Calculate kembalian
+        const kembalian = payment - total;
 
         // Set hidden fields
         $('#paymentAmount').val(payment);
-        $('#changeAmount').val(change);
+        $('#changeAmount').val(kembalian);
 
         // Update cart data
         updateCartData();
 
-        // TAMPILKAN KEMBALIAN
-        $('#changeDisplayAmount').text(formatRupiah(change));
-        $('#changeDisplay').slideDown(400);
+        // UPDATE KOTAK KEMBALIAN
+        updateKembalianBox(kembalian);
 
         // Enable submit button
         $('#submitPayment').prop('disabled', false);
 
-        // Scroll to change display
-        $('html, body').animate({
-            scrollTop: $('#changeDisplay').offset().top - 100
-        }, 500);
+        console.log('✅ Kembalian:', kembalian);
 
-        console.log('✅ Kembalian dihitung:', {
-            payment: payment,
-            change: change,
-            changeFormatted: formatRupiah(change)
-        });
+        // Alert sukses
+        alert(`✅ Kembalian berhasil dihitung!\n\nJumlah Bayar: ${formatRupiah(payment)}\nKembalian: ${formatRupiah(kembalian)}`);
     });
 
     // ========================================
@@ -582,14 +590,14 @@ $(document).ready(function() {
         // Disable button
         $('#submitPayment').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
 
-        console.log('✅ Form validated, submitting...');
+        console.log('✅ Submitting...');
 
         // Submit
         this.submit();
         return true;
     });
 
-    // Customer name input handlers
+    // Customer name input
     $('#customerNameInput').on('focus', function() {
         $(document).off('keydown.calculator');
     });
@@ -598,10 +606,10 @@ $(document).ready(function() {
         setTimeout(enableKeyboardCalculator, 100);
     });
 
-    console.log('✅ All event listeners attached');
+    console.log('✅ All events attached');
 });
 
-// Keyboard calculator support
+// Keyboard calculator
 function enableKeyboardCalculator() {
     $(document).on('keydown.calculator', function(e) {
         if ($(e.target).is('input, textarea')) return;
@@ -619,7 +627,7 @@ if (typeof $ !== 'undefined') {
     enableKeyboardCalculator();
 }
 
-console.log('✅ Script loaded completely');
+console.log('✅ Script loaded');
 </script>
 
 <?php include '../includes/footer.php'; ?>
