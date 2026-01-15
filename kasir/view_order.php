@@ -1,24 +1,25 @@
 <?php
 // ===================================
-// client/order_detail.php - FIXED
+// kasir/view_order.php - BARU
+// Halaman detail pesanan untuk approval
 // ===================================
 require_once '../config/config.php';
-requireRole('client');
+requireRole('kasir');
 
 $pageTitle = 'Detail Pesanan';
 $transactionClass = new Transaction();
 
 $id = get('id');
 if (!$id) {
-    redirect('/client/my_orders.php');
+    redirect('/kasir/dashboard.php');
 }
 
 $order = $transactionClass->getTransactionById($id);
 $details = $transactionClass->getTransactionDetails($id);
 
-if (!$order || $order['user_id'] != $_SESSION['user_id']) {
+if (!$order) {
     setFlashMessage('Pesanan tidak ditemukan', 'danger');
-    redirect('/client/my_orders.php');
+    redirect('/kasir/dashboard.php');
 }
 
 include '../includes/header.php';
@@ -31,13 +32,12 @@ include '../includes/header.php';
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="my_orders.php">Pesanan Saya</a></li>
-                    <li class="breadcrumb-item active"><?php echo $order['transaction_code']; ?></li>
+                    <li class="breadcrumb-item active">Detail Pesanan</li>
                 </ol>
             </nav>
         </div>
         <div class="col-auto">
-            <a href="my_orders.php" class="btn btn-outline-secondary">
+            <a href="dashboard.php" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-2"></i>Kembali
             </a>
         </div>
@@ -49,25 +49,26 @@ include '../includes/header.php';
         <div class="col-lg-8">
             <!-- Order Info -->
             <div class="card border-0 shadow-sm mb-3">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Informasi Pesanan</h5>
+                    <?php echo statusBadge($order['status']); ?>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <small class="text-muted">Kode Pesanan</small>
+                            <label class="text-muted small">Kode Pesanan</label>
                             <h6><strong><?php echo $order['transaction_code']; ?></strong></h6>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <small class="text-muted">Status</small>
-                            <h6><?php echo statusBadge($order['status']); ?></h6>
+                            <label class="text-muted small">Nama Customer</label>
+                            <h6><?php echo $order['customer_name']; ?></h6>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <small class="text-muted">Tanggal Pesanan</small>
+                            <label class="text-muted small">Waktu Pesanan</label>
                             <h6><?php echo formatDateTime($order['created_at'], 'd F Y, H:i'); ?></h6>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <small class="text-muted">Metode Pembayaran</small>
+                            <label class="text-muted small">Metode Pembayaran</label>
                             <h6><span class="badge bg-info"><?php echo ucfirst($order['payment_method']); ?></span></h6>
                         </div>
                     </div>
@@ -75,7 +76,7 @@ include '../includes/header.php';
                     <?php if ($order['notes']): ?>
                     <hr>
                     <div>
-                        <small class="text-muted">Catatan</small>
+                        <label class="text-muted small">Catatan Customer</label>
                         <p class="mb-0"><?php echo nl2br(htmlspecialchars($order['notes'])); ?></p>
                     </div>
                     <?php endif; ?>
@@ -111,7 +112,7 @@ include '../includes/header.php';
                                             <strong><?php echo $item['product_name']; ?></strong>
                                         </div>
                                     </td>
-                                    <td class="text-center"><?php echo $item['quantity']; ?></td>
+                                    <td class="text-center"><span class="badge bg-secondary"><?php echo $item['quantity']; ?></span></td>
                                     <td class="text-end"><?php echo formatRupiah($item['price']); ?></td>
                                     <td class="text-end"><strong><?php echo formatRupiah($item['subtotal']); ?></strong></td>
                                 </tr>
@@ -142,59 +143,75 @@ include '../includes/header.php';
                     
                     <?php if ($order['status'] == 'pending'): ?>
                     <div class="alert alert-warning">
-                        <h6 class="alert-heading">
-                            <i class="bi bi-clock-history me-2"></i>
-                            Menunggu Konfirmasi Kasir
-                        </h6>
-                        <hr>
-                        <p class="mb-2"><strong>Langkah Selanjutnya:</strong></p>
-                        <ol class="mb-2 ps-3">
-                            <li>Tunjukkan <strong>Kode Pesanan</strong> ke kasir</li>
-                            <li>Lakukan pembayaran via <strong><?php echo ucfirst($order['payment_method']); ?></strong></li>
-                            <li>Tunggu konfirmasi dari kasir</li>
-                        </ol>
-                        <div class="bg-white p-2 rounded text-center">
-                            <small class="text-muted d-block">Kode Pesanan Anda:</small>
-                            <h4 class="mb-0 fw-bold text-dark"><?php echo $order['transaction_code']; ?></h4>
-                        </div>
-                    </div>
-                    <?php elseif ($order['status'] == 'completed'): ?>
-                    <div class="alert alert-success">
-                        <i class="bi bi-check-circle me-2"></i>
-                        <strong>Pesanan Selesai</strong><br>
-                        <small>Terima kasih atas pesanan Anda!</small>
-                    </div>
-                    <?php elseif ($order['status'] == 'cancelled'): ?>
-                    <div class="alert alert-danger">
-                        <i class="bi bi-x-circle me-2"></i>
-                        <strong>Pesanan Dibatalkan</strong><br>
-                        <small>Stok sudah dikembalikan</small>
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Menunggu Konfirmasi</strong><br>
+                        <small>Pesanan ini menunggu persetujuan kasir</small>
                     </div>
                     <?php endif; ?>
-                    
-                    <div class="d-grid gap-2">
-                        <?php if ($order['status'] == 'completed'): ?>
-                        <button onclick="window.print()" class="btn btn-primary">
-                            <i class="bi bi-printer me-2"></i>Cetak Invoice
-                        </button>
-                        <?php endif; ?>
-                        
-                        <a href="products.php" class="btn btn-outline-primary">
-                            <i class="bi bi-bag me-2"></i>Belanja Lagi
-                        </a>
-                    </div>
                 </div>
             </div>
+            
+            <!-- Actions -->
+            <?php if ($order['status'] == 'pending'): ?>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Aksi</h5>
+                </div>
+                <div class="card-body">
+                    <form action="approve_order.php" method="POST" id="approveForm">
+                        <input type="hidden" name="id" value="<?php echo $order['id']; ?>">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Konfirmasi Pembayaran</label>
+                            <select class="form-select" name="payment_confirmed" required>
+                                <option value="">Pilih Status</option>
+                                <option value="yes">✅ Pembayaran Sudah Diterima</option>
+                                <option value="no">❌ Pembayaran Belum Diterima</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Catatan Kasir (Opsional)</label>
+                            <textarea class="form-control" name="kasir_notes" rows="3" 
+                                      placeholder="Tambahkan catatan jika diperlukan"></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="action" value="approve" 
+                                    class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle me-2"></i>Setujui Pesanan
+                            </button>
+                            
+                            <button type="submit" name="action" value="reject" 
+                                    class="btn btn-danger"
+                                    onclick="return confirm('Yakin ingin menolak pesanan ini?')">
+                                <i class="bi bi-x-circle me-2"></i>Tolak Pesanan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <?php if ($order['status'] == 'completed'): ?>
+                        <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3">Pesanan Selesai</h5>
+                        <p class="text-muted">Pesanan ini sudah diproses</p>
+                        <a href="print_receipt.php?id=<?php echo $order['id']; ?>" 
+                           class="btn btn-primary" target="_blank">
+                            <i class="bi bi-printer me-2"></i>Cetak Struk
+                        </a>
+                    <?php elseif ($order['status'] == 'cancelled'): ?>
+                        <i class="bi bi-x-circle text-danger" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3">Pesanan Dibatalkan</h5>
+                        <p class="text-muted">Pesanan ini telah dibatalkan</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
-
-<style>
-@media print {
-    .no-print, .navbar, .breadcrumb, .btn, footer {
-        display: none !important;
-    }
-}
-</style>
 
 <?php include '../includes/footer.php'; ?>

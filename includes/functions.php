@@ -200,9 +200,25 @@ function isGet() {
     return $_SERVER['REQUEST_METHOD'] === 'GET';
 }
 
-// Get POST data
+// ========================================
+// FIXED: Get POST data WITHOUT sanitizing JSON
+// ========================================
 function post($key, $default = null) {
-    return isset($_POST[$key]) ? sanitize($_POST[$key]) : $default;
+    if (!isset($_POST[$key])) {
+        return $default;
+    }
+    
+    $value = $_POST[$key];
+    
+    // SPECIAL CASE: Jangan sanitize data JSON (cart_data)
+    // Karena htmlspecialchars akan merusak format JSON
+    if ($key === 'cart_data') {
+        // Return raw value untuk JSON data
+        return trim(stripslashes($value));
+    }
+    
+    // Sanitize untuk data biasa
+    return sanitize($value);
 }
 
 // Get GET data
@@ -279,7 +295,4 @@ function roleBadge($role) {
     
     return "<span class='badge bg-$badgeClass'>$roleText</span>";
 }
-
-
-
 ?>

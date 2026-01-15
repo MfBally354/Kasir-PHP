@@ -1,16 +1,54 @@
 <?php
 // config/config.php
-// Konfigurasi umum aplikasi
+// Konfigurasi umum aplikasi - SUPPORT LAN & VPN
 
 // Mulai session jika belum dimulai
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Definisi konstanta aplikasi
+// ========================================
+// DUAL IP CONFIGURATION (LAN + VPN)
+// ========================================
+
+// Deteksi IP yang digunakan untuk akses
+$current_host = $_SERVER['HTTP_HOST'] ?? 'localhost:8090';
+
+// Cek apakah akses dari VPN (IP 100.106.7.34)
+if (strpos($current_host, '100.106.7.34') !== false) {
+    // Akses dari VPN
+    define('BASE_URL', 'http://100.106.7.34:8090');
+} 
+// Cek apakah akses dari LAN (IP 192.168.1.16)
+elseif (strpos($current_host, '192.168.1.16') !== false) {
+    // Akses dari jaringan lokal
+    define('BASE_URL', 'http://192.168.1.16:8090');
+} 
+// Fallback ke localhost
+else {
+    // Akses dari localhost atau IP lain
+    define('BASE_URL', 'http://' . $current_host);
+}
+
+// ========================================
+// ATAU PAKAI CARA MANUAL (Comment code di atas, uncomment ini):
+// ========================================
+/*
+// Ganti TRUE/FALSE sesuai lokasi akses:
+$is_vpn_access = false; // Set TRUE jika akses dari VPN, FALSE jika dari LAN
+
+if ($is_vpn_access) {
+    define('BASE_URL', 'http://100.106.7.34:8090');  // IP VPN
+} else {
+    define('BASE_URL', 'http://192.168.1.16:8090');  // IP LAN
+}
+*/
+
+// ========================================
+// APP CONFIG
+// ========================================
 define('APP_NAME', 'Sistem Kasir');
 define('APP_VERSION', '1.0.0');
-define('BASE_URL', 'http://192.168.1.16:8090'); // Sesuaikan dengan URL kamu
 
 // Path direktori
 define('ROOT_PATH', dirname(__DIR__));
@@ -73,4 +111,12 @@ function formatRupiah($angka) {
 function generateTransactionCode() {
     return 'TRX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 }
+
+// ========================================
+// DEBUG MODE (Uncomment untuk cek IP yang dipakai)
+// ========================================
+// echo "<!-- 
+// Current Access: " . $current_host . "
+// BASE_URL: " . BASE_URL . "
+// -->";
 ?>
