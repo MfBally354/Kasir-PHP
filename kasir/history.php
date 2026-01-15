@@ -1,6 +1,7 @@
 <?php
 // ===================================
-// kasir/history.php
+// kasir/history.php - UPDATED VERSION
+// Tambah tombol request cancel
 // ===================================
 require_once '../config/config.php';
 requireRole('kasir');
@@ -8,6 +9,7 @@ requireRole('kasir');
 $pageTitle = 'Riwayat Transaksi';
 
 $transactionClass = new Transaction();
+$db = new Database();
 $dateFilter = get('date', date('Y-m-d'));
 
 $transactions = $transactionClass->getAllTransactions([
@@ -25,6 +27,8 @@ include '../includes/header.php';
             <h2 class="fw-bold">Riwayat Transaksi</h2>
         </div>
     </div>
+    
+    <?php displayFlashMessage(); ?>
     
     <div class="card border-0 shadow-sm">
         <div class="card-body">
@@ -49,7 +53,7 @@ include '../includes/header.php';
                             <th>Metode</th>
                             <th>Status</th>
                             <th>Waktu</th>
-                            <th>Aksi</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,6 +65,14 @@ include '../includes/header.php';
                         </tr>
                         <?php else: ?>
                             <?php foreach ($transactions as $trans): ?>
+                            <?php
+                            // Cek apakah ada pending request untuk transaksi ini
+                            $hasPendingRequest = $db->fetch(
+                                "SELECT id FROM cancellation_requests 
+                                 WHERE transaction_id = :tid AND status = 'pending' LIMIT 1",
+                                [':tid' => $trans['id']]
+                            );
+                            ?>
                             <tr>
                                 <td><code><?php echo $trans['transaction_code']; ?></code></td>
                                 <td><?php echo $trans['customer_name']; ?></td>
@@ -68,11 +80,74 @@ include '../includes/header.php';
                                 <td><span class="badge bg-info"><?php echo ucfirst($trans['payment_method']); ?></span></td>
                                 <td><?php echo statusBadge($trans['status']); ?></td>
                                 <td><?php echo formatDateTime($trans['created_at'], 'd/m/Y H:i'); ?></td>
-                                <td>
-                                    <a href="print_receipt.php?id=<?php echo $trans['id']; ?>" 
-                                       class="btn btn-sm btn-outline-primary" target="_blank">
-                                        <i class="bi bi-printer"></i> Cetak
-                                    </a>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="print_receipt.php?id=<?php echo $trans['id']; ?>" 
+                                           class="btn btn-outline-primary" target="_blank" title="Cetak">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+                                        
+                                        <?php if ($trans['status'] == 'completed'): ?>
+                                            <?php if ($hasPendingRequest): ?>
+                                                <button class="btn btn-warning" disabled title="Request pending">
+                                                    <i class="bi bi-hourglass-split"></i> Pending
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#cancelModal<?php echo $trans['id']; ?>"
+                                                        title="Request Batal">
+                                                    <i class="bi bi-x-circle"></i> Batal
+                                                </button>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                    
+                                    <!-- Cancel Request Modal -->
+                                    <div class="modal fade" id="cancelModal<?php echo $trans['id']; ?>" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">Request Pembatalan Transaksi</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form action="request_cancel.php" method="POST">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="transaction_id" value="<?php echo $trans['id']; ?>">
+                                                        
+                                                        <div class="alert alert-warning">
+                                                            <strong><i class="bi bi-exclamation-triangle me-2"></i>Perhatian!</strong><br>
+                                                            Request pembatalan akan dikirim ke admin untuk persetujuan.
+                                                        </div>
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="text-muted">Transaksi:</label>
+                                                            <p class="mb-0"><strong><?php echo $trans['transaction_code']; ?></strong></p>
+                                                        </div>
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="text-muted">Total:</label>
+                                                            <p class="mb-0"><strong><?php echo formatRupiah($trans['total_amount']); ?></strong></p>
+                                                        </div>
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Alasan Pembatalan <span class="text-danger">*</span></label>
+                                                            <textarea class="form-control" name="cancel_reason" rows="4" 
+                                                                      placeholder="Jelaskan alasan pembatalan (contoh: customer komplain, salah input, dll)" 
+                                                                      required></textarea>
+                                                            <small class="text-muted">Alasan ini akan dilihat oleh admin</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="bi bi-send me-2"></i>Kirim Request
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
