@@ -1,122 +1,162 @@
 <?php
-// config/config.php
-// Konfigurasi umum aplikasi - SUPPORT LAN & VPN
+// ===================================
+// config/database.php
+// Auto-detect Docker atau Native PHP
+// WINDOWS COMPATIBLE VERSION
+// ===================================
 
-// Mulai session jika belum dimulai
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Deteksi apakah running di Docker atau native
+$isDocker = getenv('APACHE_DOCUMENT_ROOT') !== false || file_exists('/.dockerenv');
 
-// ========================================
-// DUAL IP CONFIGURATION (LAN + VPN)
-// ========================================
-
-// Deteksi IP yang digunakan untuk akses
-$current_host = $_SERVER['HTTP_HOST'] ?? 'localhost:8090';
-
-// Cek apakah akses dari VPN (IP 100.106.7.34)
-if (strpos($current_host, '100.106.7.34') !== false) {
-    // Akses dari VPN
-    define('BASE_URL', 'http://100.106.7.34:8090');
-} 
-// Cek apakah akses dari LAN (IP 192.168.1.16)
-elseif (strpos($current_host, '192.168.1.16') !== false) {
-    // Akses dari jaringan lokal
-    define('BASE_URL', 'http://192.168.1.16:8090');
-} 
-// Fallback ke localhost
-else {
-    // Akses dari localhost atau IP lain
-    define('BASE_URL', 'http://' . $current_host);
-}
-
-// ========================================
-// ATAU PAKAI CARA MANUAL (Comment code di atas, uncomment ini):
-// ========================================
-/*
-// Ganti TRUE/FALSE sesuai lokasi akses:
-$is_vpn_access = false; // Set TRUE jika akses dari VPN, FALSE jika dari LAN
-
-if ($is_vpn_access) {
-    define('BASE_URL', 'http://100.106.7.34:8090');  // IP VPN
+// Set database host berdasarkan environment
+if ($isDocker) {
+    // Running di Docker - gunakan nama service
+    define('DB_HOST', 'db');
 } else {
-    define('BASE_URL', 'http://192.168.1.16:8090');  // IP LAN
-}
-*/
-
-// ========================================
-// APP CONFIG
-// ========================================
-define('APP_NAME', 'Sistem Kasir');
-define('APP_VERSION', '1.0.0');
-
-// Path direktori
-define('ROOT_PATH', dirname(__DIR__));
-define('UPLOAD_PATH', ROOT_PATH . '/uploads/products/');
-define('UPLOAD_URL', BASE_URL . '/uploads/products/');
-
-// Timezone
-date_default_timezone_set('Asia/Jakarta');
-
-// Include file database
-require_once ROOT_PATH . '/config/database.php';
-
-// Include semua class yang diperlukan
-require_once ROOT_PATH . '/classes/Database.php';
-require_once ROOT_PATH . '/classes/Auth.php';
-require_once ROOT_PATH . '/classes/User.php';
-require_once ROOT_PATH . '/classes/Product.php';
-require_once ROOT_PATH . '/classes/Transaction.php';
-
-// Include functions
-require_once ROOT_PATH . '/includes/functions.php';
-
-// Setting error reporting (set ke 0 untuk production)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Fungsi untuk redirect
-function redirect($url) {
-    header("Location: " . BASE_URL . $url);
-    exit();
+    // Running di PHP native - gunakan localhost
+    define('DB_HOST', '127.0.0.1');
 }
 
-// Fungsi untuk cek apakah user sudah login
-function isLoggedIn() {
-    return isset($_SESSION['user_id']);
-}
+define('DB_USER', 'iqbal');
+define('DB_PASS', '#semarangwhj354iqbal#');
+define('DB_NAME', 'kasir_db');
+define('DB_CHARSET', 'utf8mb4');
 
-// Fungsi untuk cek role user
-function hasRole($role) {
-    return isset($_SESSION['role']) && $_SESSION['role'] === $role;
-}
-
-// Fungsi untuk protect halaman berdasarkan role
-function requireRole($role) {
-    if (!isLoggedIn()) {
-        redirect('/auth/login.php');
-    }
+function getConnection() {
+    $maxRetries = 5;
+    $retryDelay = 2;
     
-    if (!hasRole($role)) {
-        redirect('/index.php');
+    for ($i = 0; $i < $maxRetries; $i++) {
+        try {
+            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+            
+            // ========================================
+            // FIX: Options array yang compatible dengan semua environment
+            // ========================================
+            $options = [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false
+            ];
+            
+            // HANYA tambahkan MYSQL_ATTR_INIT_COMMAND jika constant-nya ada
+            if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+                $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci";
+            }
+            
+            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            
+            // Set charset via query jika constant tidak tersedia
+            if (!defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+                $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+            }
+            
+            // Log successful connection
+            error_log("Database connected successfully to: " . DB_HOST);
+            
+            return $pdo;
+            
+        } catch (PDOException $e) {
+            error_log("Database Connection Attempt " . ($i + 1) . " failed: " . $e->getMessage());
+            
+            if ($i < $maxRetries - 1) {
+                error_log("Retrying in $retryDelay seconds...");
+                sleep($retryDelay);
+                continue;
+            }
+            
+            // Error page
+            die("
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Database Error</title>
+                <style>
+                    body { 
+                        font-family: Arial; 
+                        padding: 40px; 
+                        background: #f5f5f5; 
+                    }
+                    .error-box { 
+                        background: white; 
+                        padding: 30px; 
+                        border-radius: 10px; 
+                        max-width: 800px;
+                        margin: 0 auto;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                    h1 { color: #dc3545; }
+                    code { 
+                        background: #f8f9fa; 
+                        padding: 2px 6px; 
+                        border-radius: 3px;
+                        font-family: monospace;
+                    }
+                    .info { 
+                        background: #e7f3ff; 
+                        padding: 15px; 
+                        border-radius: 5px; 
+                        margin: 15px 0;
+                        border-left: 4px solid #0066cc;
+                    }
+                    .warning {
+                        background: #fff3cd;
+                        padding: 15px;
+                        border-radius: 5px;
+                        margin: 15px 0;
+                        border-left: 4px solid #ffc107;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class='error-box'>
+                    <h1>❌ Database Connection Failed</h1>
+                    
+                    <div class='info'>
+                        <p><strong>Environment:</strong> " . ($GLOBALS['isDocker'] ? 'Docker' : 'PHP Native (Windows)') . "</p>
+                        <p><strong>DB Host:</strong> <code>" . DB_HOST . "</code></p>
+                        <p><strong>DB Name:</strong> <code>" . DB_NAME . "</code></p>
+                        <p><strong>DB User:</strong> <code>" . DB_USER . "</code></p>
+                        <p><strong>Error:</strong> " . htmlspecialchars($e->getMessage()) . "</p>
+                    </div>
+                    
+                    <div class='warning'>
+                        <h3>⚠️ Kemungkinan Penyebab (Windows):</h3>
+                        <ol>
+                            <li><strong>MySQL/MariaDB belum running</strong>
+                                <ul>
+                                    <li>XAMPP: Klik \"Start\" pada MySQL di Control Panel</li>
+                                    <li>Laragon: Klik \"Start All\"</li>
+                                </ul>
+                            </li>
+                            <li><strong>Username/Password salah</strong>
+                                <ul>
+                                    <li>Default XAMPP: user=<code>root</code>, password=<code>kosong</code></li>
+                                    <li>Ganti di <code>config/database.php</code></li>
+                                </ul>
+                            </li>
+                            <li><strong>Database belum diimport</strong>
+                                <ul>
+                                    <li>Buka phpMyAdmin: <code>http://localhost/phpmyadmin</code></li>
+                                    <li>Create database: <code>kasir_db</code></li>
+                                    <li>Import file: <code>database/kasir_db.sql</code></li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                    
+                    <h3>🔍 Troubleshooting (Windows):</h3>
+                    <ul>
+                        <li>Cek MySQL running: Buka XAMPP/Laragon Control Panel</li>
+                        <li>Test koneksi: Akses <code>http://localhost/phpmyadmin</code></li>
+                        <li>Cek port: MySQL harus di port 3306</li>
+                        <li>Edit config: <code>config/database.php</code> → sesuaikan user/pass</li>
+                    </ul>
+                </div>
+            </body>
+            </html>
+            ");
+        }
     }
 }
-
-// Fungsi untuk format rupiah
-function formatRupiah($angka) {
-    return 'Rp ' . number_format($angka, 0, ',', '.');
-}
-
-// Fungsi untuk generate kode transaksi
-function generateTransactionCode() {
-    return 'TRX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
-}
-
-// ========================================
-// DEBUG MODE (Uncomment untuk cek IP yang dipakai)
-// ========================================
-// echo "<!-- 
-// Current Access: " . $current_host . "
-// BASE_URL: " . BASE_URL . "
-// -->";
 ?>
