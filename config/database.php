@@ -17,8 +17,8 @@ if ($isDocker) {
 }
 
 define('DB_USER', 'iqbal');
-define('DB_PASS', 'root');
-define('DB_NAME', '');
+define('DB_PASS', '#semarangwhj354iqbal#');
+define('DB_NAME', 'kasir_db');
 define('DB_CHARSET', 'utf8mb4');
 
 function getConnection() {
