@@ -1,7 +1,7 @@
 <?php
 // ===================================
-// admin/cancel_requests.php
-// Admin approve/reject pembatalan
+// admin/cancel_requests.php - FIXED VERSION
+// REMOVED auto-refresh to prevent flickering
 // ===================================
 require_once '../config/config.php';
 requireRole('admin');
@@ -45,6 +45,12 @@ include '../includes/header.php';
         <div class="col">
             <h2 class="fw-bold">Request Pembatalan Transaksi</h2>
             <p class="text-muted">Approve atau reject request pembatalan dari kasir</p>
+        </div>
+        <div class="col-auto">
+            <!-- Manual Refresh Button -->
+            <button onclick="location.reload()" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
+            </button>
         </div>
     </div>
     
@@ -236,5 +242,8 @@ include '../includes/header.php';
         </div>
     </div>
 </div>
+
+<!-- REMOVED: Auto-refresh script yang menyebabkan flickering -->
+<!-- User sekarang bisa manual refresh dengan tombol -->
 
 <?php include '../includes/footer.php'; ?>
