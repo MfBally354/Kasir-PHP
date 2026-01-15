@@ -17,8 +17,8 @@ if ($isDocker) {
     define('DB_HOST', '127.0.0.1');
 }
 
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_USER', 'iqbal');
+define('DB_PASS', '#semarangwhj354iqbal#');
 define('DB_NAME', 'kasir_db');
 define('DB_CHARSET', 'utf8mb4');
 
