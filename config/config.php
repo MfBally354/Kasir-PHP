@@ -1,162 +1,180 @@
 <?php
 // ===================================
-// config/database.php
-// Auto-detect Docker atau Native PHP
-// WINDOWS COMPATIBLE VERSION
+// config/config.php - FINAL VERSION
+// Main Configuration File
 // ===================================
 
-// Deteksi apakah running di Docker atau native
+// Error reporting (ubah ke 0 untuk production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Start session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// ===================================
+// APPLICATION CONSTANTS
+// ===================================
+define('APP_NAME', 'Sistem Kasir PHP');
+define('APP_VERSION', '1.0.0');
+
+// Detect environment (Docker or Native PHP)
 $isDocker = getenv('APACHE_DOCUMENT_ROOT') !== false || file_exists('/.dockerenv');
 
-// Set database host berdasarkan environment
+// Base URL - Auto detect
 if ($isDocker) {
-    // Running di Docker - gunakan nama service
-    define('DB_HOST', 'db');
+    // Running di Docker
+    define('BASE_URL', 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost:8090'));
 } else {
-    // Running di PHP native - gunakan localhost
-    define('DB_HOST', '127.0.0.1');
+    // Running di Native PHP
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $scriptPath = dirname($_SERVER['SCRIPT_NAME']);
+    $basePath = ($scriptPath === '/' || $scriptPath === '\\') ? '' : $scriptPath;
+    define('BASE_URL', $protocol . '://' . $host . $basePath);
 }
 
-define('DB_USER', 'iqbal');
-define('DB_PASS', '#semarangwhj354iqbal#');
-define('DB_NAME', 'kasir_db');
-define('DB_CHARSET', 'utf8mb4');
+// Upload settings
+define('UPLOAD_PATH', __DIR__ . '/../uploads/products/');
+define('UPLOAD_URL', BASE_URL . '/uploads/products/');
+define('MAX_FILE_SIZE', 2 * 1024 * 1024); // 2MB
 
-function getConnection() {
-    $maxRetries = 5;
-    $retryDelay = 2;
-    
-    for ($i = 0; $i < $maxRetries; $i++) {
-        try {
-            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-            
-            // ========================================
-            // FIX: Options array yang compatible dengan semua environment
-            // ========================================
-            $options = [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false
-            ];
-            
-            // HANYA tambahkan MYSQL_ATTR_INIT_COMMAND jika constant-nya ada
-            if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
-                $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci";
-            }
-            
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-            
-            // Set charset via query jika constant tidak tersedia
-            if (!defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
-                $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
-            }
-            
-            // Log successful connection
-            error_log("Database connected successfully to: " . DB_HOST);
-            
-            return $pdo;
-            
-        } catch (PDOException $e) {
-            error_log("Database Connection Attempt " . ($i + 1) . " failed: " . $e->getMessage());
-            
-            if ($i < $maxRetries - 1) {
-                error_log("Retrying in $retryDelay seconds...");
-                sleep($retryDelay);
-                continue;
-            }
-            
-            // Error page
-            die("
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Database Error</title>
-                <style>
-                    body { 
-                        font-family: Arial; 
-                        padding: 40px; 
-                        background: #f5f5f5; 
-                    }
-                    .error-box { 
-                        background: white; 
-                        padding: 30px; 
-                        border-radius: 10px; 
-                        max-width: 800px;
-                        margin: 0 auto;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    }
-                    h1 { color: #dc3545; }
-                    code { 
-                        background: #f8f9fa; 
-                        padding: 2px 6px; 
-                        border-radius: 3px;
-                        font-family: monospace;
-                    }
-                    .info { 
-                        background: #e7f3ff; 
-                        padding: 15px; 
-                        border-radius: 5px; 
-                        margin: 15px 0;
-                        border-left: 4px solid #0066cc;
-                    }
-                    .warning {
-                        background: #fff3cd;
-                        padding: 15px;
-                        border-radius: 5px;
-                        margin: 15px 0;
-                        border-left: 4px solid #ffc107;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class='error-box'>
-                    <h1>❌ Database Connection Failed</h1>
-                    
-                    <div class='info'>
-                        <p><strong>Environment:</strong> " . ($GLOBALS['isDocker'] ? 'Docker' : 'PHP Native (Windows)') . "</p>
-                        <p><strong>DB Host:</strong> <code>" . DB_HOST . "</code></p>
-                        <p><strong>DB Name:</strong> <code>" . DB_NAME . "</code></p>
-                        <p><strong>DB User:</strong> <code>" . DB_USER . "</code></p>
-                        <p><strong>Error:</strong> " . htmlspecialchars($e->getMessage()) . "</p>
-                    </div>
-                    
-                    <div class='warning'>
-                        <h3>⚠️ Kemungkinan Penyebab (Windows):</h3>
-                        <ol>
-                            <li><strong>MySQL/MariaDB belum running</strong>
-                                <ul>
-                                    <li>XAMPP: Klik \"Start\" pada MySQL di Control Panel</li>
-                                    <li>Laragon: Klik \"Start All\"</li>
-                                </ul>
-                            </li>
-                            <li><strong>Username/Password salah</strong>
-                                <ul>
-                                    <li>Default XAMPP: user=<code>root</code>, password=<code>kosong</code></li>
-                                    <li>Ganti di <code>config/database.php</code></li>
-                                </ul>
-                            </li>
-                            <li><strong>Database belum diimport</strong>
-                                <ul>
-                                    <li>Buka phpMyAdmin: <code>http://localhost/phpmyadmin</code></li>
-                                    <li>Create database: <code>kasir_db</code></li>
-                                    <li>Import file: <code>database/kasir_db.sql</code></li>
-                                </ul>
-                            </li>
-                        </ol>
-                    </div>
-                    
-                    <h3>🔍 Troubleshooting (Windows):</h3>
-                    <ul>
-                        <li>Cek MySQL running: Buka XAMPP/Laragon Control Panel</li>
-                        <li>Test koneksi: Akses <code>http://localhost/phpmyadmin</code></li>
-                        <li>Cek port: MySQL harus di port 3306</li>
-                        <li>Edit config: <code>config/database.php</code> → sesuaikan user/pass</li>
-                    </ul>
-                </div>
-            </body>
-            </html>
-            ");
-        }
+// Timezone
+date_default_timezone_set('Asia/Jakarta');
+
+// ===================================
+// DATABASE CONFIGURATION
+// ===================================
+require_once __DIR__ . '/database.php';
+
+// ===================================
+// AUTOLOAD CLASSES
+// ===================================
+spl_autoload_register(function($class) {
+    $file = __DIR__ . '/../classes/' . $class . '.php';
+    if (file_exists($file)) {
+        require_once $file;
     }
+});
+
+// ===================================
+// INCLUDE HELPER FUNCTIONS
+// ===================================
+require_once __DIR__ . '/../includes/functions.php';
+
+// ===================================
+// CORE HELPER FUNCTIONS
+// ===================================
+
+/**
+ * Check if user is logged in
+ */
+function isLoggedIn() {
+    return isset($_SESSION['user_id']);
 }
-?>  
+
+/**
+ * Get current user ID
+ */
+function getUserId() {
+    return $_SESSION['user_id'] ?? null;
+}
+
+/**
+ * Get current user role
+ */
+function getUserRole() {
+    return $_SESSION['role'] ?? null;
+}
+
+/**
+ * Require specific role - with Admin bypass
+ */
+function requireRole($role) {
+    // Must be logged in
+    if (!isLoggedIn()) {
+        setFlashMessage('Silakan login terlebih dahulu', 'warning');
+        redirect('/auth/login.php');
+        exit;
+    }
+    
+    $userRole = getUserRole();
+    
+    // Admin can access everything
+    if ($userRole === 'admin') {
+        return true;
+    }
+    
+    // Check if user has the required role
+    if ($userRole !== $role) {
+        setFlashMessage('Akses ditolak! Anda tidak memiliki hak akses ke halaman ini.', 'danger');
+        
+        // Redirect to appropriate dashboard
+        switch ($userRole) {
+            case 'kasir':
+                redirect('/kasir/dashboard.php');
+                break;
+            case 'client':
+                redirect('/client/dashboard.php');
+                break;
+            default:
+                redirect('/auth/login.php');
+        }
+        exit;
+    }
+    
+    return true;
+}
+
+/**
+ * Redirect helper
+ */
+function redirect($path) {
+    // If already full URL, redirect directly
+    if (strpos($path, 'http') === 0) {
+        header('Location: ' . $path);
+        exit;
+    }
+    
+    // Add BASE_URL
+    header('Location: ' . BASE_URL . $path);
+    exit;
+}
+
+/**
+ * Format number as Rupiah
+ */
+function formatRupiah($angka) {
+    return 'Rp ' . number_format($angka, 0, ',', '.');
+}
+
+/**
+ * Generate unique transaction code
+ */
+function generateTransactionCode() {
+    $prefix = 'TRX';
+    $date = date('Ymd');
+    $random = strtoupper(substr(uniqid(), -6));
+    return $prefix . '-' . $date . '-' . $random;
+}
+
+/**
+ * Debug helper - hanya untuk development
+ */
+function debug($data, $die = false) {
+    echo '<pre style="background: #f4f4f4; padding: 10px; border: 1px solid #ddd;">';
+    print_r($data);
+    echo '</pre>';
+    if ($die) die();
+}
+
+// ===================================
+// TIMEZONE & LOCALE
+// ===================================
+setlocale(LC_TIME, 'id_ID.UTF-8', 'id_ID', 'Indonesian');
+
+// ===================================
+// CONFIG LOADED
+// ===================================
+// Ready to use!
