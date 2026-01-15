@@ -1,14 +1,13 @@
 # ===================================
 # docker-compose.yml
-# Sistem Kasir PHP untuk Desktop
-# Windows / Linux x86_64 (Docker Desktop)
-# Port: 8090 (Web), 3307 (MariaDB)
+# Sistem Kasir PHP untuk Raspberry Pi 3
+# ARM32v7 Compatible (TESTED)
+# ARM32v7 Compatible (TESTED & WORKING)
+# Port: 8090 (Web), 3307 (MySQL)
 # ===================================
 
-version: "3.9"
-
 services:
-  # ===== PHP + Apache Web Server =====
+  # ===== PHP Apache Web Server (ARM32v7) =====
   web:
     build:
       context: .
@@ -20,7 +19,7 @@ services:
       - ./:/var/www/html
       - ./uploads:/var/www/html/uploads
     environment:
-      APACHE_DOCUMENT_ROOT: /var/www/html
+      - APACHE_DOCUMENT_ROOT=/var/www/html
     depends_on:
       db:
         condition: service_healthy
@@ -28,14 +27,15 @@ services:
       - kasir_network
     restart: unless-stopped
 
-  # ===== MariaDB (DESKTOP / AMD64) =====
+  # ===== MariaDB untuk ARM32v7 =====
   db:
-    image: mariadb:10.6
+    image: yobasystems/alpine-mariadb:10.4.17-armhf
     container_name: kasir_db
+    platform: linux/arm/v7
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_ROOT_PASSWORD: "rootpassword123"
       MYSQL_DATABASE: kasir_db
       MYSQL_USER: iqbal
       MYSQL_PASSWORD: "#semarangwhj354iqbal#"
@@ -49,16 +49,34 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
       --max_allowed_packet=64M
+      --innodb_buffer_pool_size=128M
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword123"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 60s
 
-  # ===== Adminer (OPTIONAL, DESKTOP) =====
+  # ===== phpMyAdmin ARM32v7 =====
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: kasir_phpmyadmin
+    platform: linux/arm/v7
+    ports:
+      - "8091:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 20M
+    depends_on:
+      - db
+    networks:
+      - kasir_network
+    restart: unless-stopped
+  # ===== phpMyAdmin Alternative: Adminer (ARM32v7) =====
+  # Uncomment jika ingin GUI database manager
   # adminer:
-  #   image: adminer:latest
+  #   image: arm32v7/adminer:latest
   #   container_name: kasir_adminer
   #   ports:
   #     - "8091:8080"
