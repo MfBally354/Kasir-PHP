@@ -1,6 +1,6 @@
 <?php
-// includes/navbar.php
-// Navbar yang berbeda untuk setiap role
+// includes/navbar.php - UPDATED
+// Tambah notifikasi pending cancel requests untuk admin
 
 $currentRole = $_SESSION['role'] ?? '';
 $fullName = $_SESSION['full_name'] ?? 'User';
@@ -13,6 +13,13 @@ if ($currentRole == 'admin') {
     $basePath = BASE_URL . '/kasir';
 } elseif ($currentRole == 'client') {
     $basePath = BASE_URL . '/client';
+}
+
+// BARU: Hitung pending cancel requests untuk admin
+$pendingCancelCount = 0;
+if ($currentRole == 'admin') {
+    $db = new Database();
+    $pendingCancelCount = $db->count('cancellation_requests', 'status = :status', [':status' => 'pending']);
 }
 ?>
 
@@ -50,6 +57,17 @@ if ($currentRole == 'admin') {
                             <i class="bi bi-file-bar-graph me-1"></i>Laporan
                         </a>
                     </li>
+                    <!-- BARU: Menu Pembatalan -->
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="<?php echo $basePath; ?>/cancel_requests.php">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Pembatalan
+                            <?php if ($pendingCancelCount > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    <?php echo $pendingCancelCount; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
                     
                 <?php elseif ($currentRole == 'kasir'): ?>
                     <!-- Menu Kasir -->
@@ -85,7 +103,6 @@ if ($currentRole == 'admin') {
                         <a class="nav-link" href="<?php echo $basePath; ?>/cart.php">
                             <i class="bi bi-cart me-1"></i>Keranjang
                             <?php 
-                            // Hitung jumlah item di cart
                             $db = new Database();
                             $cartCount = $db->count('cart', 'user_id = :user_id', [':user_id' => $_SESSION['user_id']]);
                             if ($cartCount > 0):
