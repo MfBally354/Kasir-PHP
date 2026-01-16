@@ -11,7 +11,7 @@ NC='\033[0m' # TANPA WARNA
 MAX_RETRY=3
 COUNT=1
 
-echo -e "${BLUE}Menambahkan perubahan...${NC}"
+echo -e "${BLUE}Menambahkan perubahan...${NC}" # Menambahkan perubahan akan berwarna BIRU
 git add .
 
 echo -e "${BLUE}Melakukan commit...${NC}"
