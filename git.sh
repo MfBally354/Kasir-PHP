@@ -2,7 +2,7 @@
 
 # ====== WARNA ======
 BLUE='\033[1;34m' # BIRU
-GREEN='\033[1;32m'
+GREEN='\033[1;32m' # HIJAU
 PINK='\033[1;35m'
 DARK_RED='\033[1;31m'
 NC='\033[0m' # No Color
