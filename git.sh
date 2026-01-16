@@ -19,7 +19,7 @@ git commit -m "Auto commit" || echo -e "${PINK}Tidak ada perubahan untuk di-comm
 
 while [ $COUNT -le $MAX_RETRY ] # Melakukan perulanggan pada push, jika push gagal selama beberapa kali akan dibatalkan
 do
-  echo -e "${BLUE}Percobaan push ke-$COUNT...${NC}" # Percobaan pertama jika berhasil akan berwarna BIRU
+  echo -e "${BLUE}Percobaan push ke-$COUNT...${NC}" # Melakukan looping, dengan cara perhitungan
 
   if git push; then
     echo -e "${GREEN}✅ Push berhasil!${NC}"
