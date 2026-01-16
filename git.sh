@@ -17,7 +17,7 @@ git add .
 echo -e "${BLUE}Melakukan commit...${NC}" # Melakukan git commit akan berwarna BIRU
 git commit -m "Auto commit" || echo -e "${PINK}Tidak ada perubahan untuk di-commit${NC}" # Jika tidak ada yang bisa di commit akan berwarna MERAH MUDA 
 
-while [ $COUNT -le $MAX_RETRY ]
+while [ $COUNT -le $MAX_RETRY ] # Melakukan perulanggan pada push, jika push gagal selama beberapa kali akan dibatalkan
 do
   echo -e "${BLUE}Percobaan push ke-$COUNT...${NC}"
 
