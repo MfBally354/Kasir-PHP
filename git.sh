@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # ====== WARNA ======
-BLUE='\033[1;34m'
+BLUE='\033[1;34m' # BIRU
 GREEN='\033[1;32m'
 PINK='\033[1;35m'
 DARK_RED='\033[1;31m'
 NC='\033[0m' # No Color
+
 
 MAX_RETRY=3
 COUNT=1
