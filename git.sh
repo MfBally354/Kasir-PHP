@@ -15,7 +15,7 @@ echo -e "${BLUE}Menambahkan perubahan...${NC}" # Menambahkan perubahan akan berw
 git add .
 
 echo -e "${BLUE}Melakukan commit...${NC}" # Melakukan git commit akan berwarna BIRU
-git commit -m "Auto commit" || echo -e "${PINK}Tidak ada perubahan untuk di-commit${NC}" 
+git commit -m "Auto commit" || echo -e "${PINK}Tidak ada perubahan untuk di-commit${NC}" # Jika tidak ada yang bisa di commit akan berwarna MERAH MUDA 
 
 while [ $COUNT -le $MAX_RETRY ]
 do
