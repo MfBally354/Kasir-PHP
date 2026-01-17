@@ -13,7 +13,7 @@ if ($isDocker) {
     define('DB_HOST', 'db');
 } else {
     // Running di PHP native - gunakan localhost
-    define('DB_HOST', '127.0.0.1', 'localhost', '0.0.0.0');
+    define('DB_HOST', '127.0.0.1');
 }
 
 define('DB_USER', 'iqbal');
