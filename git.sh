@@ -26,7 +26,7 @@ do
     break
   else
     echo -e "${PINK}❌ Push gagal, mencoba pull --rebase...${NC}" # Jika push gagal akan berwarna PINK
-    git pull --rebase
+    git pull --rebase # Akan git --rebase jika gagal
   fi
 
   COUNT=$((COUNT+1))
