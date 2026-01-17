@@ -1,0 +1,79 @@
+# ===================================
+# Dockerfile.dev
+# PHP 8.1 Apache untuk Laptop/PC (x86_64)
+# ===================================
+
+FROM php:8.1-apache
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    curl \
+    default-mysql-client \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configure GD with JPEG support
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+
+# Install PHP extensions
+RUN docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    mysqli \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip
+
+# Enable Apache modules
+RUN a2enmod rewrite headers
+
+# Configure Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# PHP Configuration
+RUN { \
+    echo "upload_max_filesize = 10M"; \
+    echo "post_max_size = 10M"; \
+    echo "max_execution_time = 300"; \
+    echo "memory_limit = 256M"; \
+    echo "display_errors = On"; \
+    echo "error_reporting = E_ALL"; \
+    echo "date.timezone = Asia/Jakarta"; \
+} > /usr/local/etc/php/conf.d/custom.ini
+
+# Create uploads directory
+RUN mkdir -p /var/www/html/uploads/products && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
+
+# Configure Apache DocumentRoot
+ENV APACHE_DOCUMENT_ROOT=/var/www/html
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Enable AllowOverride for .htaccess
+RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
+
+# Expose port 80
+EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"]
