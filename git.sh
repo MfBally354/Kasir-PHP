@@ -22,7 +22,7 @@ do
   echo -e "${BLUE}Percobaan push ke-$COUNT...${NC}" # Melakukan looping, dengan cara perhitungan
 
   if git push; then
-    echo -e "${GREEN}✅ Push berhasil!${NC}"
+    echo -e "${GREEN}✅ Push berhasil!${NC}" # Jika berhasil akan berwarna hijau
     break
   else
     echo -e "${PINK}❌ Push gagal, mencoba pull --rebase...${NC}"
