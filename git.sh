@@ -33,7 +33,7 @@ do
 done
 
 if [ $COUNT -gt $MAX_RETRY ]; then
-  echo -e "${DARK_RED}🚨 Push gagal setelah $MAX_RETRY kali percobaan.${NC}"
+  echo -e "${DARK_RED}🚨 Push gagal setelah $MAX_RETRY kali percobaan.${NC}" # Jika percobaan gagal akan berwarna MERAH
 fi
 
 git status
