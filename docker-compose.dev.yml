@@ -5,7 +5,7 @@
 # ===================================
 
 services:
-  # ===== PHP Apache Web Server (x86_64) =====
+  # ==== PHP Apache Web Server (x86_64) ====
   web:
     build:
       context: .
