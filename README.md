@@ -451,7 +451,8 @@ Jika project ini membantu Anda, berikan ⭐ di GitHub repository!
 
 **Built with ❤️ using PHP & Bootstrap**
 
-[![GitHub Stars](https://img.shields.io/github/stars/username/kasir-app?style=social)](https://github.com/MfBally354/kasir-app/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/username/kasir-app?style=social)](https://github.com/MfBally354/kasir-app/network/members)
+[![GitHub Stars](https://img.shields.io/github/stars/username/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/username/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/network/members)
 
 </div>
+
