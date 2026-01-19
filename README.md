@@ -281,13 +281,13 @@ docker compose logs -f db
 ### Database Management
 ```bash
 # Access MySQL shell
-docker exec -it kasir_db mysql -uiqbal -p
+docker exec -it kasir_db mysql -u iqbal -p
 
 # Backup database
-docker exec kasir_db mysqldump -uiqbal -p'' kasir_db > backup.sql
+docker exec kasir_db mysqldump -u root -p '' kasir_db > backup.sql
 
 # Restore database
-docker exec -i kasir_db mysql -uiqbal -p'' kasir_db < backup.sql
+docker exec -i kasir_db mysql -u iqbal -p '' kasir_db < backup.sql
 ```
 
 ### Maintenance
