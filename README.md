@@ -99,7 +99,7 @@
 
 ### 1️⃣ Clone Repository
 ```bash
-git clone https://github.com/username/kasir-app.git
+git clone https://github.com/MfBally354/kasir-app.git
 cd kasir-app
 ```
 
@@ -456,6 +456,7 @@ Jika project ini membantu Anda, berikan ⭐ di GitHub repository!
 [![GitHub Forks](https://img.shields.io/github/forks/MfBally354/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/network/members)
 
 </div>
+
 
 
 
