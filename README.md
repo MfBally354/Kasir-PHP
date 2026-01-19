@@ -14,7 +14,8 @@
 ### Dashboard Admin
 <!-- Ganti dengan screenshot dashboard admin -->
 ```
-[Screenshot Dashboard Admin - Tampilkan statistik, grafik penjualan]
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f3602386-d55f-48b0-ba90-0b3fb1fc0e4e" />
+
 ```
 
 ### Transaksi Kasir
@@ -455,5 +456,6 @@ Jika project ini membantu Anda, berikan ⭐ di GitHub repository!
 [![GitHub Forks](https://img.shields.io/github/forks/MfBally354/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/network/members)
 
 </div>
+
 
 
