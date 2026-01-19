@@ -215,7 +215,7 @@ kasir-app/
 Host: localhost / db (dalam Docker)
 Port: 3307
 Username: iqbal
-Password: #semarangwhj354iqbal#
+Password: 
 Database: kasir_db
 ```
 
