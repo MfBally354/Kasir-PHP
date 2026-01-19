@@ -100,7 +100,7 @@
 ### 1️⃣ Clone Repository
 ```bash
 git clone https://github.com/MfBally354/Kasir-PHP.git
-cd kasir-PHP
+cd Kasir-PHP
 ```
 
 ### 2️⃣ Jalankan Docker (Satu Perintah!)
@@ -456,6 +456,7 @@ Jika project ini membantu Anda, berikan ⭐ di GitHub repository!
 [![GitHub Forks](https://img.shields.io/github/forks/MfBally354/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/network/members)
 
 </div>
+
 
 
 
