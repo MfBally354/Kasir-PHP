@@ -359,7 +359,7 @@ Jika ada error saat checkout, clear browser cache dan cookies, lalu coba lagi.
 |-------|----------|
 | Database slow di Raspberry Pi | Edit `docker-compose.yml`, kurangi `innodb_buffer_pool_size` ke 128M |
 | Build time lama di Raspberry Pi | Normal, butuh 5-10 menit karena CPU lambat |
-| phpMyAdmin tidak bisa login | Gunakan user: ``, password: `` |
+| phpMyAdmin tidak bisa login | Gunakan user: `root`, password: `` |
 
 ---
 
