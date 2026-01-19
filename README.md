@@ -422,7 +422,7 @@ Kontribusi sangat diterima! Silakan fork repository ini dan submit Pull Request.
 - **Developer**: Your Name
 - **Email**: your.email@example.com
 - **GitHub**: [@MfBally354](https://github.com/MfBally354)
-- **Website**: [your-website.com](https://MfBally354.github.io/Portofolio/)
+- **Website**: [@MfBally354](https://MfBally354.github.io/Portofolio/)
 
 ---
 
