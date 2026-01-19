@@ -26,7 +26,8 @@
 ### Client Shopping
 <!-- Ganti dengan screenshot katalog produk -->
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5c391837-4116-4ff4-b708-00b6331226d3" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/09c6e14c-3186-459b-96bf-5cdcede50f72" />
+
 
 
 ---
@@ -455,6 +456,7 @@ Jika project ini membantu Anda, berikan ⭐ di GitHub repository!
 [![GitHub Forks](https://img.shields.io/github/forks/MfBally354/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/network/members)
 
 </div>
+
 
 
 
