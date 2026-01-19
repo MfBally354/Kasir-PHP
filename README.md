@@ -287,7 +287,7 @@ docker exec -it kasir_db mysql -uiqbal -p
 docker exec kasir_db mysqldump -uiqbal -p'#semarangwhj354iqbal#' kasir_db > backup.sql
 
 # Restore database
-docker exec -i kasir_db mysql -uiqbal -p'#semarangwhj354iqbal#' kasir_db < backup.sql
+docker exec -i kasir_db mysql -uiqbal -p'' kasir_db < backup.sql
 ```
 
 ### Maintenance
