@@ -19,9 +19,9 @@
 
 ### Transaksi Kasir
 <!-- Ganti dengan screenshot halaman transaksi -->
-```
-[Screenshot Halaman Transaksi - Tampilkan POS interface dengan calculator]
-```
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f44b280a-0259-42b7-a53b-8988926604f1" />
+
 
 ### Client Shopping
 <!-- Ganti dengan screenshot katalog produk -->
@@ -455,6 +455,7 @@ Jika project ini membantu Anda, berikan ⭐ di GitHub repository!
 [![GitHub Forks](https://img.shields.io/github/forks/MfBally354/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/network/members)
 
 </div>
+
 
 
 
