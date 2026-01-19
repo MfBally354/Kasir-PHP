@@ -214,7 +214,7 @@ kasir-app/
 ```yaml
 Host: localhost / db (dalam Docker)
 Port: 3307
-Username: iqbal
+Username: root
 Password: 
 Database: kasir_db
 ```
