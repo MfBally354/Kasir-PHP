@@ -25,9 +25,9 @@
 
 ### Client Shopping
 <!-- Ganti dengan screenshot katalog produk -->
-```
-[Screenshot Katalog Produk - Tampilkan grid produk dengan filter]
-```
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5c391837-4116-4ff4-b708-00b6331226d3" />
+
 
 ---
 
@@ -455,6 +455,7 @@ Jika project ini membantu Anda, berikan ⭐ di GitHub repository!
 [![GitHub Forks](https://img.shields.io/github/forks/MfBally354/Kasir-PHP?style=social)](https://github.com/MfBally354/Kasir-PHP/network/members)
 
 </div>
+
 
 
 
