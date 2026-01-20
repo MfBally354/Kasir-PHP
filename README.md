@@ -167,7 +167,7 @@ chmod -R 777 Kasir-PHP/uploads/
 
 ### 5️⃣ Akses
 ```
-http://localhost/kasir-app
+http://localhost/kasir-PHP
 ```
 
 ---
