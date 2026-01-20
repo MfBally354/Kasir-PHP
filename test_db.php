@@ -73,7 +73,7 @@ try {
     echo "<ol>";
     echo "<li>Cek MySQL berjalan: <code>sudo systemctl status mysql</code></li>";
     echo "<li>Cek user access: <code>mysql -u iqbal -p -h 127.0.0.1</code></li>";
-    echo "<li>Cek password benar: <code>#semarangwhj354iqbal#</code></li>";
+    echo "<li>Cek password benar: <code>password123</code></li>";
     echo "</ol>";
 }
 ?>
