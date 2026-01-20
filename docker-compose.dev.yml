@@ -49,7 +49,7 @@ services:
       --max_allowed_packet=64M
       --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword123"]
       interval: 10s
       timeout: 5s
       retries: 10
