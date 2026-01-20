@@ -7,8 +7,8 @@ echo "<hr>";
 
 // Config
 $host = '127.0.0.1';
-$user = 'iqbal';
-$pass = '#semarangwhj354iqbal#';
+$user = 'root';
+$pass = '';
 $db = 'kasir_db';
 
 echo "<h3>📝 Konfigurasi:</h3>";
