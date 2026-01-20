@@ -161,7 +161,7 @@ define('DB_NAME', 'kasir_db');
 
 ### 4️⃣ Set Permissions
 ```bash
-chmod -R 755 kasir-PHP/
+chmod -R 755 Kasir-PHP/
 chmod -R 777 kasir-app/uploads/
 ```
 
