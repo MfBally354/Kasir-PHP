@@ -392,7 +392,7 @@ Kontribusi sangat diterima! Silakan fork repository ini dan submit Pull Request.
 
 ## 📝 Changelog
 
-### Version 1.0.0 (2025-01-18)
+### Version 1.0.0 (2026-01-18)
 - ✅ Initial release
 - ✅ Admin dashboard dengan analytics
 - ✅ Kasir POS system dengan calculator
