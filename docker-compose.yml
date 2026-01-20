@@ -51,7 +51,7 @@ services:
       --max_allowed_packet=64M
       --innodb_buffer_pool_size=128M
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword123"]
       interval: 10s
       timeout: 5s
       retries: 10
