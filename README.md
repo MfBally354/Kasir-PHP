@@ -175,7 +175,7 @@ http://localhost/Kasir-PHP
 ## 🎯 Struktur Folder
 
 ```
-kasir-PHP/
+Kasir-PHP/
 ├── 📁 admin/              # Admin dashboard & management
 ├── 📁 kasir/              # Kasir POS system
 ├── 📁 client/             # Client shopping interface
